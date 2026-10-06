@@ -20,14 +20,14 @@ def _ctx():
 
 
 def test_zone_edges_cover_all_assignable_cells():
-    cfg, cells, e1, e2, min_frac = _ctx()
+    _cfg, cells, e1, e2, min_frac = _ctx()
     for c in cells:
         if G.cell_area_fraction(c, 5000.0) >= min_frac:
             assert G.zone_of_cell(c, e1, e2) in ("core", "mid", "far")
 
 
 def test_zoned_quotas_met_and_slivers_excluded():
-    cfg, cells, e1, e2, min_frac = _ctx()
+    _cfg, cells, e1, e2, min_frac = _ctx()
     qpz = {"core": {"test": 4, "train": 3}, "mid": {"test": 23, "train": 17},
            "far": {"test": 21, "train": 16}}
     side = G.assign_cells_zoned(cells, 6, qpz, min_frac, (e1, e2))
@@ -48,7 +48,6 @@ def test_zoned_buffer_guarantee():
     qpz = {"core": {"test": 4, "train": 3}, "mid": {"test": 23, "train": 17},
            "far": {"test": 21, "train": 16}}
     side = G.assign_cells_zoned(cells, 6, qpz, min_frac, (e1, e2))
-    by_id = {c["id"]: c for c in cells}
     pts = G.sample_grid_points(side, cells, 200, 150, 7)
     test = [{"block": p["block"], "xy": tuple(p["geometry"]["coordinates"])}
             for p in pts if p["split"] == "test"]
@@ -58,7 +57,7 @@ def test_zoned_buffer_guarantee():
 
 
 def test_zoned_deterministic():
-    cfg, cells, e1, e2, min_frac = _ctx()
+    _cfg, cells, e1, e2, min_frac = _ctx()
     qpz = {"core": {"test": 4, "train": 3}, "mid": {"test": 23, "train": 17},
            "far": {"test": 21, "train": 16}}
     a = G.assign_cells_zoned(cells, 6, qpz, min_frac, (e1, e2))
@@ -67,7 +66,7 @@ def test_zoned_deterministic():
 
 
 def test_zoned_quota_failure_loud():
-    cfg, cells, e1, e2, min_frac = _ctx()
+    _cfg, cells, e1, e2, min_frac = _ctx()
     with pytest.raises(ValueError, match="[Qq]uota"):
         G.assign_cells_zoned(cells, 7, {"core": {"test": 12, "train": 12},
                                         "mid": {"test": 0, "train": 0},
@@ -81,7 +80,6 @@ def test_zoned_stable_across_hash_seeds(tmp_path):
     Runs the assignment in two processes with different PYTHONHASHSEED and
     requires identical output (this is what caught the set-ordering bug).
     """
-    import json
     import subprocess
     import sys
     helper = tmp_path / "draw.py"
@@ -103,7 +101,8 @@ def test_zoned_stable_across_hash_seeds(tmp_path):
         import os
         env = dict(os.environ, PYTHONHASHSEED=hs)
         r = subprocess.run([sys.executable, str(helper)], capture_output=True,
-                           text=True, cwd=".", env=env, timeout=120)
+                           text=True, cwd=".", env=env, timeout=120, check=True)
         assert r.returncode == 0, r.stderr
         outs.append(r.stdout)
     assert outs[0] == outs[1]
+
