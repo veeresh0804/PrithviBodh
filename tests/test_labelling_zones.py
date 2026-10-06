@@ -6,7 +6,7 @@ configs/labels/labelling.yaml. Fast, deterministic, no network.
 import pytest
 
 from geoeco.labels import grid as G
-from geoeco.labels.pipeline import load_labelling_config
+from geoeco.labels.pipeline import REPO, load_labelling_config
 
 
 def _ctx():
@@ -101,7 +101,7 @@ def test_zoned_stable_across_hash_seeds(tmp_path):
         import os
         env = dict(os.environ, PYTHONHASHSEED=hs)
         r = subprocess.run([sys.executable, str(helper)], capture_output=True,
-                           text=True, cwd=".", env=env, timeout=120, check=True)
+                           text=True, cwd=str(REPO), env=env, timeout=120, check=True)
         assert r.returncode == 0, r.stderr
         outs.append(r.stdout)
     assert outs[0] == outs[1]
