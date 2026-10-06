@@ -41,11 +41,13 @@ dev = [
   "ruff>=0.4",
   "mypy>=1.10",
 ]
-# Minimal closure for `pytest tests/` (verified: full suite passes with ONLY
+# Test-only closure for `pytest tests/` (verified: full suite passes with ONLY
 # these + the repo on sys.path — no torch/lightning/mlflow/geemap needed).
-# CI installs exactly this (see .github/workflows/ci.yml Install step) so a
-# heavyweight resolver surprise can't fail the unit-test job. Keep in sync
-# with the test import closure; verify with: pip install -e ".[test]" --no-deps
+# CI installs this as an explicit package list plus `pip install -e . --no-deps`
+# (see .github/workflows/ci.yml): extras are ADDITIVE, so `.[test]` alone would
+# still pull the heavy base `dependencies` — the explicit list is what keeps CI
+# light. Contributors wanting the full runtime: `pip install -e ".[dev]"`.
+# Keep in sync with the test import closure.
 test = [
   "pytest>=8.0",
   "numpy>=1.26",

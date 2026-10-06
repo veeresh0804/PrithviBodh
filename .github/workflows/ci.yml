@@ -18,9 +18,10 @@ jobs:
           python-version: "3.10"
           cache: pip
 
-      - name: Install
+      - name: Install (test closure only — see pyproject [test] extra)
         run: |
-          pip install -e ".[dev]"
+          pip install ruff pytest numpy pandas pyyaml fastapi httpx sqlalchemy pydantic scikit-learn
+          pip install -e . --no-deps
 
       - name: Lint (ruff)
         run: ruff check geoeco api tests
@@ -30,9 +31,13 @@ jobs:
           set +e
           pytest -q --tb=short > pytest.log 2>&1
           code=$?
-          # Mirror the tail as error annotations: readable via the public
-          # API (check-run annotations need no login), unlike step logs.
-          tail -40 pytest.log | sed 's/^/::error::/'
+          # ONE multi-line annotation: GitHub shows only the first ~10 error
+          # annotations per step, so 40 separate ::error:: lines would hide
+          # the failure summary. Newlines become %0A (carriage returns
+          # stripped). Pytest output here is paths + assertion text only —
+          # no secrets pass through this step.
+          msg=$(tail -40 pytest.log | sed ':a;N;$!ba;s/\n/%0A/g; s/\r//g')
+          echo "::error::$msg"
           exit $code
 
       - name: Labelling pipeline tests (schema, overlap, qgz, prelabel, merge)
