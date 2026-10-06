@@ -29,6 +29,21 @@ stages:
       - data/processed/points.parquet
       - data/processed/chips/
 
+  labelling:
+    cmd: python -m geoeco.labels.pipeline --stage all && python -m geoeco.labels.qgis
+    deps:
+      - geoeco/labels/
+      - configs/labels/labelling.yaml
+      - configs/aoi/hyderabad.yaml
+      - configs/eval/spatial_cv.yaml
+    outs:
+      - data/labels/hyd_sampling_skeleton.geojson
+      - data/labels/members/
+      - data/labels/overlap_index.csv
+      - data/labels/qgis/
+    params:
+      - configs/labels/labelling.yaml
+
   train:
     cmd: python -m geoeco.train.train_classical --model configs/model/rf.yaml && python -m geoeco.train.train_seg --model configs/model/unet.yaml
     deps:

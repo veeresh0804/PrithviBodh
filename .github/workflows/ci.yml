@@ -25,5 +25,8 @@ jobs:
       - name: Unit tests
         run: pytest -q
 
+      - name: Labelling pipeline tests (schema, overlap, qgz, prelabel, merge)
+        run: pytest -q tests/test_labelling.py -v
+
       - name: Leakage test (spatial blocks disjoint)
         run: pytest -q tests/test_leakage.py -v

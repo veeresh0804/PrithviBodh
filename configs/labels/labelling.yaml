@@ -1,0 +1,42 @@
+# Hyderabad labelling pipeline parameters (M2).
+# All labelling-geometry choices live here — pipeline code reads this file,
+# never hard-codes. Seed MUST equal configs/eval/spatial_cv.yaml seed
+# (pipeline asserts this and fails loudly otherwise).
+seed: 42
+
+splits:
+  test: 2000
+  train: 1500
+
+# Fold (block) scheme. Task orders block IDs B0-B4; folds are 5 contiguous
+# longitude bands (~11.9 km each). NOTE: band width exceeds the
+# configs/eval/spatial_cv.yaml 3-10 km range — logged as a provisional
+# deviation in docs/label_run_report.md. Fine cells below stay in-range.
+folds: ["B0", "B1", "B2", "B3", "B4"]
+test_folds: ["B0", "B1", "B2"]
+train_folds: ["B3", "B4"]
+
+# Fine grid for the `fine_block` column. Provisional: semivariogram range not
+# computed yet (config gives range 3-10 km); 5 km is inside the range.
+fine_block_size_m: 5000
+
+# 10% of points double-labelled, spread across members and folds
+# (spread across *classes* is impossible pre-labelling — classes are unknown
+# until humans label; post-labelling balance check covers this).
+overlap_fraction: 0.10
+
+# Roster (sourced from PROJECT_CONTEXT.md §7.1, 3 members -> ~1,200 pts each).
+members:
+  - { id: "A", name: "V D S S M Veeresh" }
+  - { id: "B", name: "Sandhya Malavath" }
+  - { id: "C", name: "Sehwag Lavudiya" }
+
+# Must match the protocol gate (geoeco/labels/agreement.py passes_gate default).
+agreement_threshold: 0.85
+
+# Class scheme reference only — labels are ALWAYS human-filled (never auto).
+classes_ref: "configs/data/sentinel.yaml:classes_default6"
+
+# QGIS workspace sources (public tile endpoints; S2 export expected locally).
+s2_post_monsoon_cog: "data/raw/composites/s2_post_2025.tif"
+admin_boundary: "data/admin/hyderabad_boundary.geojson"
