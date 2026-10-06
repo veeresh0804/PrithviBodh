@@ -15,6 +15,7 @@ tests/test_labelling_buffer.py).
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 from pathlib import Path
 
@@ -91,7 +92,7 @@ def assign_cells(cells: list[dict], seed: int, test_quota: int,
     # NOTE: the 0.5 default must match labelling.yaml min_cell_area_fraction;
     # main() always passes the config value explicitly.
     ys = sorted({c["y0"] for c in cells})
-    step_y = min((b - a for a, b in zip(ys, ys[1:])), default=0.0)
+    step_y = min((b - a for a, b in itertools.pairwise(ys)), default=0.0)
     cell_m = step_y * KM_PER_DEG_LAT * 1000.0 if step_y > 0 else 0.0
     assignable = [c["id"] for c in cells
                   if cell_area_fraction(c, cell_m) >= min_area_fraction]
