@@ -118,16 +118,21 @@ def sample_grid_points(side: dict[str, str], cells: list[dict], n_test: int,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Build grid-design audit skeleton.")
     ap.add_argument("--outdir", default=str(REPO / "data" / "labels" / "audit"))
-    ap.add_argument("--test-quota", type=int, default=48, help="test cells")
-    ap.add_argument("--train-quota", type=int, default=36, help="train cells")
+    ap.add_argument("--test-quota", type=int, default=None, help="test cells (default: config grid_cells.test)")
+    ap.add_argument("--train-quota", type=int, default=None, help="train cells (default: config grid_cells.train)")
     args = ap.parse_args(argv)
     ctx = load_labelling_config()
     cfg, aoi = ctx["labelling"], ctx["aoi"]
+    if "grid_seed" not in cfg:
+        raise KeyError("labelling.yaml missing grid_seed (adopted grid design requires it)")
+    seed = int(cfg["grid_seed"])
+    test_quota = args.test_quota if args.test_quota is not None else int(cfg["grid_cells"]["test"])
+    train_quota = args.train_quota if args.train_quota is not None else int(cfg["grid_cells"]["train"])
     minlon, minlat, maxlon, maxlat = (float(v) for v in aoi["bounds_wgs84"])
     cells = build_cells(minlon, minlat, maxlon, maxlat, float(cfg["fine_block_size_m"]))
-    side = assign_cells(cells, int(cfg["seed"]), args.test_quota, args.train_quota)
+    side = assign_cells(cells, seed, test_quota, train_quota)
     pts = sample_grid_points(side, cells, int(cfg["splits"]["test"]),
-                             int(cfg["splits"]["train"]), int(cfg["seed"]))
+                             int(cfg["splits"]["train"]), seed)
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     import csv

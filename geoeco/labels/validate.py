@@ -40,6 +40,12 @@ def load_member_rows(members_dir: Path) -> list[dict]:
 
 def check_schema(rows: list[dict], overlap_ids: set[str]) -> list[str]:
     """Validate merged rows. Returns error list (empty = pass)."""
+    import re
+    try:
+        folds = set(load_labelling_config()["labelling"]["folds"])
+    except Exception:
+        folds = {"B0", "B1", "B2", "B3", "B4"}
+    cell_re = re.compile(r"^g\d{2}_\d{2}$")
     errors: list[str] = []
     seen: dict[str, int] = {}
     for r in rows:
@@ -55,8 +61,9 @@ def check_schema(rows: list[dict], overlap_ids: set[str]) -> list[str]:
             errors.append(f"{pid}: label {lab} not in 0-5")
         elif name != CLASSES[int(lab)]:
             errors.append(f"{pid}: label_name {name!r} != {CLASSES[int(lab)]!r}")
-        if r.get("block") not in ("B0", "B1", "B2", "B3", "B4"):
-            errors.append(f"{pid}: bad block {r.get('block')!r}")
+        blk = r.get("block")
+        if blk not in folds and not (isinstance(blk, str) and cell_re.match(blk)):
+            errors.append(f"{pid}: bad block {blk!r}")
     dups = {k: v for k, v in seen.items() if v > 2}
     for k, v in dups.items():
         errors.append(f"{k}: appears {v} times (max 2, overlap only)")

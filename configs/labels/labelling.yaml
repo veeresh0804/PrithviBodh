@@ -41,6 +41,13 @@ classes_ref: "configs/data/sentinel.yaml:classes_default6"
 s2_post_monsoon_cog: "data/raw/composites/s2_post_2025.tif"
 admin_boundary: "data/admin/hyderabad_boundary.geojson"
 
+# Grid design (ADOPTED 2026-10-06; seed accepted via seed_check gates).
+# Band `seed: 42` above is frozen for record; grid uses its own stream.
+grid_seed: 3
+grid_cells:
+  test: 48
+  train: 36
+
 # Pre-registered seed-acceptance rule (covariate balance ONLY — never model
 # accuracy). Any grid-draw skeleton must pass ALL three gates below, checked by
 # `python -m geoeco.labels.seed_check --skeleton <path>` (see

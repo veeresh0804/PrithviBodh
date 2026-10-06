@@ -1,6 +1,4 @@
-# Labelling Run Report — 2026-10-06 (automated part)
-
-## Counts
+# Labelling Run Report — 2026-10-06 (automated part)## Counts
 - Skeleton: 3,500 points (test 2,000 in B0-B2; train 1,500 in B3-B4). Seed 42
   (asserted equal to `configs/eval/spatial_cv.yaml`).
 - Overlap: 350 points (10%), selected per (split, block); pairs cycle A-B/B-C/C-A.
@@ -47,3 +45,19 @@
 2. Adjudication: `validate.py` prints the disagreement queue on failure;
    guide resolves into `adjudications.csv`, then `make labels-merge`.
 3. Re-run `qgis` module after S2/admin exports so projects include them.
+
+## Adoption of the grid design (2026-10-06, team decision)
+- `grid_seed: 3` + `grid_cells: {test: 48, train: 36}` added to
+  `configs/labels/labelling.yaml` (band `seed: 42` frozen for record;
+  `grid.py` now requires `grid_seed`, quotas fall back to config).
+- Band artefacts archived untouched to `data/labels/audit/bands_superseded/`
+  (skeleton, members, qgis, overlap_index).
+- Canonical paths regenerated from the seed-3 grid (checker ACCEPT: gap
+  3.33 km, core test=151/train=48, bands 5+4): skeleton 3,500 pts
+  (ids `HYD-G-*`), members A 1,285 / B 1,277 / C 1,283, overlap manifest 345,
+  QGIS projects rebuilt (S2/admin still omitted — files still missing).
+- `validate.py`: 3,845 empty-label errors (one/row, humans pending),
+  leakage true, agreement pending — correct pre-labelling state.
+- `validate.check_schema` fixed to accept grid cell ids (`gNN_NN`) alongside
+  B0–B4 (adoption surfaced the hard-coded block list; 48 tests pass).
+- Band-violation regression test now reads the archived copy.

@@ -87,10 +87,11 @@ def test_shared_block_caught():
 
 
 def test_current_band_design_violates_buffer():
-    """Documents the audit finding: committed band design has test/train
-    neighbours across the B2/B3 boundary closer than one cell width."""
-    data = json.loads((REPO / "data" / "labels" / "hyd_sampling_skeleton.geojson")
-                      .read_text(encoding="utf-8"))
+    """Documents the audit finding: the superseded band design had test/train
+    neighbours across the B2/B3 boundary closer than one cell width.
+    Reads the archived copy (adoption moved canonical paths to the grid)."""
+    data = json.loads((REPO / "data" / "labels" / "audit" / "bands_superseded"
+                       / "hyd_sampling_skeleton.geojson").read_text(encoding="utf-8"))
     test = [{"block": f["properties"]["block"], "xy": tuple(f["geometry"]["coordinates"])}
             for f in data["features"] if f["properties"]["split"] == "test"]
     train = [{"block": f["properties"]["block"], "xy": tuple(f["geometry"]["coordinates"])}
