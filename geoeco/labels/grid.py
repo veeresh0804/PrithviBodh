@@ -43,6 +43,18 @@ def build_cells(minlon: float, minlat: float, maxlon: float, maxlat: float,
     return cells
 
 
+def cell_area_fraction(cell: dict, cell_m: float) -> float:
+    """Fraction of a full cell's area this cell covers (edge-clamped cells).
+
+    Full-cell size in degrees matches build_cells; area scales with
+    (width * height), so the fraction is the width fraction times the
+    height fraction. Interior cells return 1.0; the clamped northern edge
+    sliver (~42 m tall vs 5 km) returns ~0.008."""
+    dlat = (cell_m / 1000.0) / KM_PER_DEG_LAT
+    dlon = (cell_m / 1000.0) / KM_PER_DEG_LON_AT_HYD
+    return ((cell["x1"] - cell["x0"]) / dlon) * ((cell["y1"] - cell["y0"]) / dlat)
+
+
 def neighbours(cell: dict, by_pos: dict[tuple[int, int], str]) -> list[str]:
     """Ids of the 8-neighbourhood cells."""
     out = []
@@ -57,18 +69,38 @@ def neighbours(cell: dict, by_pos: dict[tuple[int, int], str]) -> list[str]:
 
 
 def assign_cells(cells: list[dict], seed: int, test_quota: int,
-                 train_quota: int) -> dict[str, str]:
+                 train_quota: int, min_area_fraction: float = 0.5) -> dict[str, str]:
     """Random greedy assignment with opposite-side buffer. Fails loudly if
-    quotas cannot be met (rule 4) instead of silently relaxing the buffer."""
+    quotas cannot be met (rule 4) instead of silently relaxing the buffer.
+
+    Cells covering less than `min_area_fraction` of a full cell (the
+    maxlat-clamped northern sliver row) are unassignable: they never enter
+    `side`, so they hold no points and act as implicit buffer exactly like
+    any other unassigned cell. BUFFER GUARANTEE STILL HOLDS: exclusion only
+    removes assignment candidates — the Chebyshev-distance >= 2 invariant
+    enforced below over the remaining cells is unchanged, and every
+    unassigned (sliver or buffer) cell still separates opposite sides, so
+    the minimum test-train point distance stays >= one cell width (see
+    tests/test_labelling_buffer.py)."""
     rng = np.random.Generator(np.random.PCG64(seed))
     by_pos = {(c["col"], c["row"]): c["id"] for c in cells}
     by_id = {c["id"]: c for c in cells}
+    # Sliver exclusion is geometry-only (seed-independent): recover the
+    # nominal cell size from the grid step itself and reuse
+    # cell_area_fraction, so the filter cannot drift from build_cells.
+    # NOTE: the 0.5 default must match labelling.yaml min_cell_area_fraction;
+    # main() always passes the config value explicitly.
+    ys = sorted({c["y0"] for c in cells})
+    step_y = min((b - a for a, b in zip(ys, ys[1:])), default=0.0)
+    cell_m = step_y * KM_PER_DEG_LAT * 1000.0 if step_y > 0 else 0.0
+    assignable = [c["id"] for c in cells
+                  if cell_area_fraction(c, cell_m) >= min_area_fraction]
     side: dict[str, str] = {}
     counts = {"test": 0, "train": 0}
     # Multi-pass greedy (buffer rule never relaxed): each pass reshuffles the
     # still-unassigned cells and fills gaps left by earlier passes.
     for attempt in range(10):
-        order = rng.permutation([c["id"] for c in cells if c["id"] not in side])
+        order = rng.permutation([cid for cid in assignable if cid not in side])
         progressed = False
         for cid in order:
             if counts["test"] >= test_quota and counts["train"] >= train_quota:
@@ -125,12 +157,15 @@ def main(argv: list[str] | None = None) -> int:
     cfg, aoi = ctx["labelling"], ctx["aoi"]
     if "grid_seed" not in cfg:
         raise KeyError("labelling.yaml missing grid_seed (adopted grid design requires it)")
+    if "min_cell_area_fraction" not in cfg:
+        raise KeyError("labelling.yaml missing min_cell_area_fraction (sliver exclusion requires it)")
     seed = int(cfg["grid_seed"])
+    min_frac = float(cfg["min_cell_area_fraction"])
     test_quota = args.test_quota if args.test_quota is not None else int(cfg["grid_cells"]["test"])
     train_quota = args.train_quota if args.train_quota is not None else int(cfg["grid_cells"]["train"])
     minlon, minlat, maxlon, maxlat = (float(v) for v in aoi["bounds_wgs84"])
     cells = build_cells(minlon, minlat, maxlon, maxlat, float(cfg["fine_block_size_m"]))
-    side = assign_cells(cells, seed, test_quota, train_quota)
+    side = assign_cells(cells, seed, test_quota, train_quota, min_frac)
     pts = sample_grid_points(side, cells, int(cfg["splits"]["test"]),
                              int(cfg["splits"]["train"]), seed)
     outdir = Path(args.outdir)

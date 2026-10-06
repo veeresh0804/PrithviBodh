@@ -3,12 +3,12 @@ services:
     image: postgis/postgis:16-3.4
     environment:
       POSTGRES_USER: geoeco
-      POSTGRES_PASSWORD: geoeco
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before running docker compose up}
       POSTGRES_DB: geoeco
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
 
   titiler:
     build:
@@ -27,9 +27,9 @@ services:
       context: .
       dockerfile: Dockerfile.api
     environment:
-      DATABASE_URL: postgresql+psycopg2://geoeco:geoeco@postgis:5432/geoeco
+      DATABASE_URL: postgresql+psycopg2://geoeco:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before running docker compose up}@postgis:5432/geoeco
       TITILER_URL: http://titiler:8000
-      ADMIN_API_KEY: ${ADMIN_API_KEY:-changeme-local-only}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?Set ADMIN_API_KEY before running docker compose up}
     depends_on:
       - postgis
       - titiler

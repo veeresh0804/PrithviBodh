@@ -15,7 +15,13 @@ from fastapi import Header, HTTPException, status
 
 
 def expected_admin_key() -> str:
-    return os.environ.get("ADMIN_API_KEY", "changeme-local-only")
+    key = os.environ.get("ADMIN_API_KEY", "")
+    if not key.strip():
+        raise RuntimeError(
+            "ADMIN_API_KEY is not set: export ADMIN_API_KEY "
+            "before starting the API."
+        )
+    return key
 
 
 async def require_admin_key(
