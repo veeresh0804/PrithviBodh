@@ -26,7 +26,14 @@ jobs:
         run: ruff check geoeco api tests
 
       - name: Unit tests
-        run: pytest -q
+        run: |
+          set +e
+          pytest -q --tb=short > pytest.log 2>&1
+          code=$?
+          # Mirror the tail as error annotations: readable via the public
+          # API (check-run annotations need no login), unlike step logs.
+          tail -40 pytest.log | sed 's/^/::error::/'
+          exit $code
 
       - name: Labelling pipeline tests (schema, overlap, qgz, prelabel, merge)
         run: pytest -q tests/test_labelling.py -v
