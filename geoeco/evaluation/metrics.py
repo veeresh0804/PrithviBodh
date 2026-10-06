@@ -5,8 +5,7 @@ OA, macro-F1, per-class F1, Cohen's kappa, confusion matrix, mIoU (patches).
 from __future__ import annotations
 
 import numpy as np
-from sklearn.metrics import (accuracy_score, cohen_kappa_score, confusion_matrix,
-                             f1_score)
+from sklearn.metrics import accuracy_score, cohen_kappa_score, confusion_matrix, f1_score
 
 
 def classification_scores(y_true: np.ndarray, y_pred: np.ndarray,

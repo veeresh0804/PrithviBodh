@@ -87,7 +87,6 @@ def build_qgs(member_id: str, warnings: list[str]) -> ET.ElementTree:
     layers.append(_raster_xyz("google_xyz", "Google Satellite", GOOGLE_XYZ))
     for lid in ["esri_xyz", "google_xyz"]:
         ET.SubElement(tree, "layer-tree-layer", {"id": lid})
-    qgis_dir = REPO / "data" / "labels" / "qgis"
     s2 = REPO / str(cfg["s2_post_monsoon_cog"])
     admin = REPO / str(cfg["admin_boundary"])
     if s2.is_file():

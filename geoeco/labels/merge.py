@@ -89,8 +89,9 @@ def main(argv: list[str] | None = None) -> int:
                                      "configs/aoi/hyderabad.yaml",
                                      "configs/data/sentinel.yaml",
                                      "configs/eval/spatial_cv.yaml"],
-             "n_points": len(feats),
-             "sha256": hashlib.sha256(open(args.out, "rb").read()).hexdigest()}
+             "n_points": len(feats)}
+    with open(args.out, "rb") as fh:
+        stamp["sha256"] = hashlib.sha256(fh.read()).hexdigest()
     (labels_dir / "VERSION.json").write_text(json.dumps(stamp, indent=2), encoding="utf-8")
     print(f"wrote {args.out} ({len(feats)} points) + VERSION.json")
     return 0

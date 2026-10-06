@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import RedirectResponse
@@ -30,10 +29,10 @@ def _find(product_id: int) -> dict:
 
 @router.get("/products")
 def list_products(
-    region: Optional[str] = Query(default=None),
-    product_type: Optional[str] = Query(default=None, alias="type"),
-    year: Optional[int] = Query(default=None),
-    season: Optional[str] = Query(default=None),
+    region: str | None = Query(default=None),
+    product_type: str | None = Query(default=None, alias="type"),
+    year: int | None = Query(default=None),
+    season: str | None = Query(default=None),
 ) -> list[dict]:
     """GET /products?region=&type=&year=&season= — filter the map catalog."""
     out = STUB_PRODUCTS

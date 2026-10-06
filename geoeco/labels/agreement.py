@@ -47,7 +47,6 @@ def cohen_kappa(y1: list[str] | np.ndarray, y2: list[str] | np.ndarray) -> float
     if a.shape != b.shape:
         raise ValueError(f"Label vectors differ in shape: {a.shape} vs {b.shape}")
     classes = np.unique(np.concatenate([a, b]))
-    n = a.size
     po = float(np.mean(a == b))
     pe = sum(float(np.mean(a == c)) * float(np.mean(b == c)) for c in classes)
     if pe == 1.0:

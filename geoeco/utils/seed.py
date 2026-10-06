@@ -41,7 +41,7 @@ def fix_seeds(seed: int = 42, deterministic_torch: bool = True) -> int:
             torch.backends.cudnn.benchmark = False
             try:
                 torch.use_deterministic_algorithms(True)
-            except Exception:
+            except RuntimeError:
                 # Older torch builds; best-effort only.
                 pass
     except ImportError:

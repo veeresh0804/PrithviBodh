@@ -6,16 +6,14 @@ set, agreement gate pass+fail on fixtures, .qgz validity (zip + XML + points
 layer + no classification layer), prelabel refusals (test rows, missing
 rasters), merge blocking on empty labels.
 """
-import csv
 import json
-import zipfile
 import xml.etree.ElementTree as ET
+import zipfile
 
 import pytest
 
 from geoeco.features.sampling import assert_no_leakage
 from geoeco.labels import pipeline as P
-from geoeco.labels import validate as V
 
 
 def _skeleton(n_test=200, n_train=150, seed=42):
@@ -78,7 +76,7 @@ def test_member_split_counts_and_overlap_dup(tmp_path):
 
 def test_agreement_gate_pass_and_fail():
     from geoeco.labels.agreement import passes_gate
-    ok, ag, kp = passes_gate(["0"] * 90 + ["1"] * 10, ["0"] * 90 + ["2"] * 10, 0.85)
+    ok, ag, _kp = passes_gate(["0"] * 90 + ["1"] * 10, ["0"] * 90 + ["2"] * 10, 0.85)
     assert ok and ag == pytest.approx(0.9)
     ok, ag, _ = passes_gate(["0"] * 70 + ["1"] * 30, ["0"] * 70 + ["2"] * 30, 0.85)
     assert not ok and ag == pytest.approx(0.7)
@@ -87,7 +85,7 @@ def test_agreement_gate_pass_and_fail():
 def test_qgz_valid_and_no_classification_layer(tmp_path):
     from geoeco.labels import qgis as Q
     dest = tmp_path / "member_A.qgz"
-    warnings = Q.write_qgz("A", dest)
+    Q.write_qgz("A", dest)
     assert dest.is_file()
     with zipfile.ZipFile(dest) as zf:
         names = zf.namelist()

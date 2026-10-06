@@ -19,7 +19,7 @@ import mlflow
 import mlflow.sklearn
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import GroupKFold, GridSearchCV
+from sklearn.model_selection import GridSearchCV, GroupKFold
 
 from geoeco.evaluation.metrics import classification_scores
 from geoeco.models.classical import (

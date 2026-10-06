@@ -71,7 +71,6 @@ def cva_second_opinion(change: np.ndarray, magnitude: np.ndarray,
     Returns bool mask: post-classif says change but CVA magnitude is low
     (below quantile), or vice versa.
     """
-    n = change.shape[0] * change.shape[1]
     n_classes = 6
     said_change = (change != NODATA_CHANGE) & ((change // n_classes) != (change % n_classes))
     thr = float(np.quantile(magnitude, quantile))

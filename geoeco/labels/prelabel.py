@@ -52,9 +52,9 @@ def run_pretrain_suggestions(members_dir: str | Path) -> int:
                 continue
             lon, lat = feat["geometry"]["coordinates"]
             with rasterio.open(DW_RASTER) as src:
-                dw = int(list(src.sample([(lon, lat)]))[0][0])
+                dw = int(next(iter(src.sample([(lon, lat)])))[0])
             with rasterio.open(WC_RASTER) as src:
-                wc = int(list(src.sample([(lon, lat)]))[0][0])
+                wc = int(next(iter(src.sample([(lon, lat)])))[0])
             dw6 = int(crosswalk([dw], DW_CROSSWALK, "DW")[0])
             wc6 = int(crosswalk([wc], WC_CROSSWALK, "WorldCover")[0])
             if dw6 == wc6:

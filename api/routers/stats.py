@@ -8,8 +8,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import APIRouter, HTTPException, Query
 
 from api.db import STUB_AREA_HA, STUB_PRODUCTS
@@ -34,7 +32,7 @@ def _product_exists(product_id: int) -> None:
 @router.get("/stats/{product_id}")
 def product_stats(
     product_id: int,
-    admin_unit: Optional[str] = Query(default=None),
+    admin_unit: str | None = Query(default=None),
 ) -> dict:
     """Per-class area (ha) + error-adjusted CIs stub for one product."""
     _product_exists(product_id)
@@ -89,7 +87,7 @@ def analyze(req: AnalyzeRequest) -> dict:
 def change(
     from_id: int = Query(alias="from"),
     to_id: int = Query(alias="to"),
-    admin_unit: Optional[str] = Query(default=None),
+    admin_unit: str | None = Query(default=None),
 ) -> dict:
     """From-to transition matrix stub (2019 -> 2025)."""
     _product_exists(from_id)

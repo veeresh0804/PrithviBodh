@@ -44,7 +44,7 @@ def test_assign_strata_threshold_overrides_are_honoured():
     out = S.assign_strata(ndvi, mndwi, bright, ndvi_veg=0.70)
     assert list(out)[1] == "other"  # veg pixel drops out under stricter thr
     out2 = S.assign_strata(ndvi, mndwi, bright, mndwi_water=0.90)
-    assert list(out2)[0] == "other"
+    assert next(iter(out2)) == "other"
 
 
 def test_assign_strata_rejects_shape_mismatch_and_empty():
@@ -169,10 +169,10 @@ def test_strata_code_never_writes_label_or_touches_benchmarks():
     for node in ast.walk(tree):
         if isinstance(node, ast.Dict):
             for k, v in zip(node.keys, node.values):
-                if isinstance(k, ast.Constant) and k.value in (
-                        "label", "label_name", "suggested_label"):
-                    if not (isinstance(v, ast.Constant) and v.value in (None, "")):
-                        writes.append(f"{k.value}={ast.dump(v)}")
+                if (isinstance(k, ast.Constant) and k.value in (
+                        "label", "label_name", "suggested_label")
+                        and not (isinstance(v, ast.Constant) and v.value in (None, ""))):
+                    writes.append(f"{k.value}={ast.dump(v)}")
     assert writes == [], f"strata.py writes label values: {writes}"
     # Runtime proof: every planned point carries an empty label.
     pts = S.plan_topup(_pool(), {"other": 3}, seed=42)

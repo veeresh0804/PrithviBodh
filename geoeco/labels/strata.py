@@ -314,7 +314,7 @@ def compute_topup_needs(
     """
     if total_labelled <= 0:
         raise ValueError(f"total_labelled must be positive, got {total_labelled}")
-    target = max(int(math.ceil(min_share * total_labelled)), int(min_n))
+    target = max(math.ceil(min_share * total_labelled), min_n)
     needs: dict[str, int] = {}
     for cls in sorted(class_counts):
         n = int(class_counts[cls])
@@ -446,7 +446,7 @@ def plan_topup(
     n_ov = 0
     for key in sorted(groups):
         idx = groups[key]
-        k = int(round(len(idx) * float(overlap_fraction)))
+        k = round(len(idx) * float(overlap_fraction))
         for j in rng_ov.permutation(idx)[:k]:
             pts[j]["overlap_id"] = f"OV-T2-{key[0]}-{key[1]}-{n_ov:03d}"
             n_ov += 1

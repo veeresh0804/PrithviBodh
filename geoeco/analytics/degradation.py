@@ -11,7 +11,7 @@ Weights default to 1.0; water loss weighted 1.5 (scarce tank resource).
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd

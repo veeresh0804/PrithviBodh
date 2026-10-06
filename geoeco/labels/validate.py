@@ -23,7 +23,7 @@ from pathlib import Path
 from geoeco.features.sampling import assert_no_leakage
 from geoeco.labels.agreement import cohen_kappa, passes_gate, percent_agreement
 from geoeco.labels.pipeline import REPO, load_labelling_config
-from geoeco.labels.protocol import CLASS_IDS, CLASSES
+from geoeco.labels.protocol import CLASSES
 
 
 def load_member_rows(members_dir: Path) -> list[dict]:
@@ -43,7 +43,7 @@ def check_schema(rows: list[dict], overlap_ids: set[str]) -> list[str]:
     import re
     try:
         folds = set(load_labelling_config()["labelling"]["folds"])
-    except Exception:
+    except (OSError, KeyError, ValueError):
         folds = {"B0", "B1", "B2", "B3", "B4"}
     cell_re = re.compile(r"^g\d{2}_\d{2}$")
     errors: list[str] = []

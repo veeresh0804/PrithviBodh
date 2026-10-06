@@ -7,7 +7,6 @@ macro-F1 for fused vs optical-only — fused must drop less.
 from __future__ import annotations
 
 import numpy as np
-from sklearn.base import clone
 
 from geoeco.evaluation.metrics import classification_scores
 
@@ -19,7 +18,7 @@ def synthetic_optical_mask(X: np.ndarray, n_optical: int, frac: float,
     """Zero a random frac of OPTICAL columns (first n_optical cols by convention)."""
     rng = np.random.default_rng(seed)
     Xm = X.copy().astype(float)
-    n_drop = int(round(n_optical * frac))
+    n_drop = round(n_optical * frac)
     drop = rng.choice(n_optical, size=n_drop, replace=False)
     Xm[:, drop] = 0.0
     return Xm

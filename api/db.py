@@ -12,7 +12,6 @@ stack is runnable with zero infra (docker-compose wires real PostGIS).
 from __future__ import annotations
 
 import os
-from typing import Iterator, Optional
 
 from sqlalchemy import (
     Column,

@@ -10,8 +10,10 @@ hard-coded (NFR-09).
 """
 from __future__ import annotations
 
-import os
+import logging
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -28,13 +30,14 @@ def _ee():
         import ee  # type: ignore[import-not-found]
     except ImportError as e:
         raise ImportError("earthengine-api required: pip install earthengine-api") from e
-    key = os.environ.get("GEE_SERVICE_ACCOUNT") or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     # Auth handled by caller (ee.Authenticate / service account); just init.
+    # ee raises provider-specific auth/transport errors: log and let the
+    # caller authenticate (notebooks) or fail closed (CI without creds).
     try:
         import ee as _ee_mod
         _ee_mod.Initialize()
-    except Exception:
-        pass  # caller authenticates in notebook/CI
+    except Exception as e:  # noqa: BLE001 - provider-specific errors
+        logger.debug("EE init deferred: %s", e)
     return ee
 
 

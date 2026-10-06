@@ -94,7 +94,7 @@ def build_lightgbm(
     learning_rate: float = 0.05,
     n_estimators: int = 500,
     random_state: int = 42,
-) -> "LGBMClassifier":
+) -> LGBMClassifier:
     """LightGBM alternative for M3 (early fusion, all features)."""
     if not _HAS_LGBM:
         raise ImportError("lightgbm is not installed; pip install lightgbm")
@@ -130,7 +130,7 @@ class ClassicalModel:
         return path
 
     @staticmethod
-    def load(path: str | Path) -> "ClassicalModel":
+    def load(path: str | Path) -> ClassicalModel:
         obj = joblib.load(path)
         return ClassicalModel(
             model_id=obj["model_id"], estimator=obj["estimator"], columns=obj["columns"])

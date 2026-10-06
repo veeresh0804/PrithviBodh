@@ -23,13 +23,11 @@ Design notes (also in docs/label_run_report.md):
 from __future__ import annotations
 
 import argparse
-import itertools
 import json
 from pathlib import Path
 
 import numpy as np
 
-from geoeco.labels.protocol import CLASSES
 from geoeco.utils.config import load_yaml_config, require_keys
 
 REPO = Path(__file__).resolve().parents[2]
@@ -160,7 +158,7 @@ def select_overlap(pts: list[dict], fraction: float, seed: int) -> list[dict]:
         groups.setdefault((p["split"], p["block"]), []).append(i)
     for key in sorted(groups):
         idx = groups[key]
-        k = int(round(len(idx) * fraction))
+        k = round(len(idx) * fraction)
         for j in rng.permutation(idx)[:k]:
             pts[j]["overlap_id"] = f"OV-{key[0]}-{key[1]}-{len(chosen):03d}"
             chosen.append(pts[j])

@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 
 from geoeco.features.sampling import (
-    assign_spatial_blocks,
     assert_no_leakage,
+    assign_spatial_blocks,
     check_no_leakage,
     group_kfold_splits,
 )

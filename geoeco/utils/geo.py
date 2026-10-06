@@ -93,9 +93,9 @@ def reproject_bounds(
         Reprojected bounds tuple.
     """
     try:
+        from pyproj import Transformer
         from shapely.geometry import box
         from shapely.ops import transform as shp_transform
-        from pyproj import Transformer
     except ImportError as exc:
         raise ImportError(
             "reproject_bounds needs shapely+pyproj: pip install shapely pyproj"

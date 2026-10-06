@@ -6,9 +6,9 @@ import os
 
 os.environ.setdefault("ADMIN_API_KEY", "test-key")
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from api.app import app  # noqa: E402
+from api.app import app
 
 client = TestClient(app)
 

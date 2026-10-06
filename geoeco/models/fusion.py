@@ -27,7 +27,7 @@ class StackingFusion:
     meta: LogisticRegression | None = None
     random_state: int = 42
 
-    def fit(self, p_opt: np.ndarray, p_sar: np.ndarray, y: np.ndarray) -> "StackingFusion":
+    def fit(self, p_opt: np.ndarray, p_sar: np.ndarray, y: np.ndarray) -> StackingFusion:
         X = np.concatenate([np.asarray(p_opt), np.asarray(p_sar)], axis=1)
         self.meta = LogisticRegression(
             max_iter=2000, multi_class="multinomial", random_state=self.random_state)

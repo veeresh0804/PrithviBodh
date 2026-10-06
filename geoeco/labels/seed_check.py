@@ -1,7 +1,7 @@
 """Pre-registered seed-acceptance checker (covariate balance, NEVER accuracy).
 
 Rule source: `configs/labels/labelling.yaml` -> `seed_acceptance` block.
-Haversine/proxy-table logic is REUSED from `data/labels/audit/collect.py`
+Haversine/proxy-table logic is REUSED from `geoeco.labels.geo_stats`
 (`summarize` + `hav`) so the printed train-vs-test proxy table is exactly the
 audit-A3 table (mean distance-to-centre, mean lon/lat, n). Cell geometry is
 reused from `geoeco.labels.grid.build_cells`; band indexing reuses
@@ -18,37 +18,17 @@ printed); 1 on missing inputs / misconfiguration (fail loudly, never invent).
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import sys
 from pathlib import Path
 
-from geoeco.labels.pipeline import REPO, fold_of_lon, load_labelling_config
+from geoeco.labels.geo_stats import CENTER, hav, summarize
+from geoeco.labels.pipeline import fold_of_lon, load_labelling_config
 from geoeco.utils.config import require_keys
-
-AUDIT_COLLECT = REPO / "data" / "labels" / "audit" / "collect.py"
 
 GATE_CORE = "core_both_sides"
 GATE_GAP = "mean_dist_gap"
 GATE_BANDS = "lon_band_span"
-
-
-def _load_audit_collect():
-    """Import the audit helper for its haversine + proxy-table logic.
-
-    Raises:
-        FileNotFoundError: If the helper is absent (report, don't invent).
-    """
-    if not AUDIT_COLLECT.is_file():
-        raise FileNotFoundError(
-            f"Audit helper not found: {AUDIT_COLLECT} (refusing to re-derive "
-            "haversine numbers — restore the file and re-run)")
-    spec = importlib.util.spec_from_file_location("audit_collect", AUDIT_COLLECT)
-    if spec is None or spec.loader is None:  # pragma: no cover - defensive
-        raise ImportError(f"Cannot import audit helper: {AUDIT_COLLECT}")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
 
 
 def _acceptance_cfg(labelling: dict) -> dict:
@@ -71,10 +51,10 @@ def _core_cell_id(minlon: float, minlat: float, maxlon: float, maxlat: float,
     """
     from geoeco.labels.grid import build_cells
     for c in build_cells(minlon, minlat, maxlon, maxlat, cell_m):
-        if c["x0"] <= core_lon < c["x1"] or (core_lon == maxlon and c["x1"] == maxlon):
-            if c["y0"] <= core_lat < c["y1"] or (core_lat == maxlat and c["y1"] == maxlat):
-                # Edge-clamp: maxlon/maxlat belong to the last column/row.
-                return c["id"]
+        if ((c["x0"] <= core_lon < c["x1"] or (core_lon == maxlon and c["x1"] == maxlon))
+                and (c["y0"] <= core_lat < c["y1"] or (core_lat == maxlat and c["y1"] == maxlat))):
+            # Edge-clamp: maxlon/maxlat belong to the last column/row.
+            return c["id"]
     # Fallback for exact-max-edge containment (build_cells clamps x1/y1).
     for c in build_cells(minlon, minlat, maxlon, maxlat, cell_m):
         if c["x0"] <= core_lon <= c["x1"] and c["y0"] <= core_lat <= c["y1"]:
@@ -122,15 +102,14 @@ def check_seed_acceptance(skeleton_geojson: str | Path) -> tuple[bool, dict]:
     if not feats:
         raise ValueError(f"Skeleton has no features: {path}")
 
-    collect = _load_audit_collect()
-    helper_centre = tuple(collect.CENTER)
+    helper_centre = tuple(CENTER)
     if abs(helper_centre[0] - core_lon) > 1e-9 or abs(helper_centre[1] - core_lat) > 1e-9:
         raise ValueError(
             f"Centre mismatch: seed_acceptance core ({core_lon}, {core_lat}) != "
             f"audit helper CENTER {helper_centre} — fix configs, not code")
 
     # Proxy table, EXACTLY as audit A3 (same function, same rounding).
-    _, _, dist = collect.summarize(feats)
+    _, _, dist = summarize(feats)
 
     by_split: dict[str, list[tuple[float, float]]] = {"test": [], "train": []}
     for f in feats:
@@ -146,11 +125,11 @@ def check_seed_acceptance(skeleton_geojson: str | Path) -> tuple[bool, dict]:
     gap = round(abs(dist["test"]["mean_dist_km"] - dist["train"]["mean_dist_km"]), 2)
     gap_ok = gap <= max_gap
 
-    # GATE 1 — core presence on both sides (haversine reused from collect).
+    # GATE 1 — core presence on both sides (haversine reused from geo_stats).
     core_counts = {}
     for split, pts in by_split.items():
         core_counts[split] = sum(1 for lon, lat in pts
-                                 if collect.hav(lon, lat) <= core_radius_km)
+                                 if hav(lon, lat) <= core_radius_km)
     core_ok = (core_counts["test"] >= min_core
                and core_counts["train"] >= min_core)
 

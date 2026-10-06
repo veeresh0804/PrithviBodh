@@ -7,7 +7,7 @@ Polygon area cap: 100 km2 (NFR-05, api_limits.polygon_km2).
 from __future__ import annotations
 
 import math
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -73,13 +73,13 @@ class AnalyzeRequest(BaseModel):
 
     polygon: PolygonGeometry
     from_product_id: int = Field(gt=0)
-    to_product_id: Optional[int] = Field(default=None, gt=0)
+    to_product_id: int | None = Field(default=None, gt=0)
 
 
 class ProductQuery(BaseModel):
     """GET /products filters (mirrors query params, for docs/tests)."""
 
-    region: Optional[str] = None
-    product_type: Optional[str] = None
-    year: Optional[int] = None
-    season: Optional[str] = None
+    region: str | None = None
+    product_type: str | None = None
+    year: int | None = None
+    season: str | None = None

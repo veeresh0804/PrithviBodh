@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import yaml
 
@@ -59,7 +60,7 @@ def load_yaml_config(path: str | Path) -> dict[str, Any]:
     if data is None:
         return {}
     if not isinstance(data, dict):
-        raise ValueError(f"Top-level YAML node must be a mapping: {path}")
+        raise TypeError(f"Top-level YAML node must be a mapping: {path}")
     return _expand_obj(data)
 
 

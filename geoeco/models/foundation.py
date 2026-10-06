@@ -9,7 +9,7 @@ importable on CPU CI. Training scripts raise a clear error if missing.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import torch
 from torch import nn
