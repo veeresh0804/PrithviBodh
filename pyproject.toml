@@ -62,6 +62,9 @@ test = [
 
 [tool.setuptools.packages.find]
 where = ["."]
+# api/ is intentionally NOT packaged: it deploys as source via Dockerfile.api,
+# and tests import it through `pythonpath = ["."]` below. Only the geoeco
+# library ships as a distributable.
 include = ["geoeco*"]
 
 [tool.ruff]
@@ -70,3 +73,10 @@ target-version = "py310"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Explicit repo-root import path: bare `pytest` (as CI runs it) does not put
+# the repo root on sys.path the way `python -m pytest` does. Without this,
+# `import api` / `from tests.… import …` fail at collection with
+# ModuleNotFoundError (CI incident 2026-10-06, docs/ci_incident_2026-10-06.md).
+# tests/__init__.py provides the same guarantee via package semantics; both
+# are kept so the intent is written down, not inferred.
+pythonpath = ["."]
