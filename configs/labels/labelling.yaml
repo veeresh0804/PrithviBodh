@@ -40,3 +40,56 @@ classes_ref: "configs/data/sentinel.yaml:classes_default6"
 # QGIS workspace sources (public tile endpoints; S2 export expected locally).
 s2_post_monsoon_cog: "data/raw/composites/s2_post_2025.tif"
 admin_boundary: "data/admin/hyderabad_boundary.geojson"
+
+# Pre-registered seed-acceptance rule (covariate balance ONLY — never model
+# accuracy). Any grid-draw skeleton must pass ALL three gates below, checked by
+# `python -m geoeco.labels.seed_check --skeleton <path>` (see
+# geoeco/labels/seed_check.py). A draw is accepted only on gates computed from
+# point coordinates (distance-to-centre proxy + longitude spread + core
+# presence). Thresholds were fixed BEFORE evaluating candidate seeds and are
+# justified per-gate below; changing them requires re-registration (edit here
+# with a dated comment), never silent tuning.
+seed_acceptance:
+  # Urban core point. Mirrors configs/aoi/hyderabad.yaml center (17.38N 78.48E);
+  # duplicated here so the rule is self-contained and pre-registered.
+  core_lon: 78.48
+  core_lat: 17.38
+  # GATE 1 — core_both_sides ("core cell on BOTH sides", defined precisely):
+  # "core cell" = the fine_block_size_m grid cell containing
+  # (core_lon, core_lat) under geoeco/labels/grid.py build_cells geometry
+  # (origin at AOI minlon/minlat; seed-42 id is g05_06 — diagnostic only, the
+  # gate itself is radius-based so it works on ANY skeleton including bands).
+  # Operational gate: EACH split must place >= min_core_points_per_side points
+  # within core_radius_km of the core point. "Core-adjacent" therefore means
+  # "within core_radius_km", NOT an 8-neighbour cell: the grid design enforces
+  # a one-cell 8-neighbourhood buffer between opposite sides, so a test core
+  # cell can NEVER touch a train 8-neighbour by construction — an 8-neighbour
+  # gate would be unsatisfiable. core_radius_km = 10.0 = 2x fine_block_size_m:
+  # the minimum radius that CAN hold both a test and a train cell (core cell +
+  # buffer ring + nearest opposite-side cell). Existence floor (1 pt) is
+  # deliberate: this gate checks urban-fabric presence on both sides, while
+  # proportionality is GATE 2's job.
+  core_radius_km: 10.0
+  min_core_points_per_side: 1
+  # GATE 2 — mean_dist_gap: |mean_dist_test - mean_dist_train| <= threshold,
+  # where mean_dist_* is the audit-A3 proxy (mean haversine km to the core
+  # point, same numbers as data/labels/audit/stats.json distance_proxy_km).
+  # Threshold 5.0 km = one fine_block_size_m = the leakage-buffer distance: a
+  # larger mean offset means the sides live in systematically different
+  # distance shells, a regime shift bigger than the buffer itself. Scale
+  # context: ~1/6 of the AOI half-width (30 km), ~1/8 of max centre-corner
+  # distance (~42 km). Pilot scan of 8 grid draws gave gaps 1.4-10.9 km with
+  # ~25% passing at 5.0 km — the gate bites (rejects seed 42's 8.39 km) but is
+  # satisfiable (seeds 3, 999 pass), so it is neither vacuous nor impossible.
+  max_mean_dist_gap_km: 5.0
+  # GATE 3 — lon_band_span: split the AOI longitude range (from hyderabad.yaml
+  # bounds_wgs84) into n_lon_bands equal bands (5 = the existing B0-B4 folds,
+  # ~11.9 km each — no new geometry invented). A side "spans" a band if it
+  # holds >= min_points_per_band points there; EACH side must span >=
+  # min_bands_per_side bands. 4/5 ~= 48 of 60 km east-west presence: tolerates
+  # one buffer-induced gap (all 8 pilot grid draws span >= 4) while catching
+  # hard east/west splits — the band design spans only 3 (test) and 2 (train)
+  # and fails. Span is existence (>= 1 pt); balance is GATE 2's job.
+  n_lon_bands: 5
+  min_bands_per_side: 4
+  min_points_per_band: 1
