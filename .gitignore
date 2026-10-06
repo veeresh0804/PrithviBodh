@@ -17,6 +17,7 @@ venv/
 .mypy_cache/
 .hydra/
 mlruns/
+mlflow.db
 *.log
 
 # Data / outputs (versioned via DVC + remote, never git)
