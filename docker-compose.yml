@@ -1,0 +1,51 @@
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: geoeco
+      POSTGRES_PASSWORD: geoeco
+      POSTGRES_DB: geoeco
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  titiler:
+    build:
+      context: .
+      dockerfile: Dockerfile.titiler
+    environment:
+      COG_ROOT: /cog
+    volumes:
+      # R2 / HF COG mirror (demo tiles stream over HTTP; nothing downloaded).
+      - cog-data:/cog
+    ports:
+      - "8001:8000"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql+psycopg2://geoeco:geoeco@postgis:5432/geoeco
+      TITILER_URL: http://titiler:8000
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-changeme-local-only}
+    depends_on:
+      - postgis
+      - titiler
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./web
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+
+volumes:
+  pgdata:
+  cog-data: # mount ./data/cog here in prod, or bind an R2/HF FUSE mount

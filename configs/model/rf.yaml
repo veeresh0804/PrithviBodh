@@ -1,0 +1,23 @@
+# M1-M5 classical baselines (sklearn/LightGBM on point tables, CPU).
+model: rf
+family: classical
+inputs: all_channels  # variants: optical | sar | all (early fusion); decision-fusion averages M1+M2 probs
+
+rf:
+  n_estimators: 500
+  criterion: gini
+  max_features: sqrt        # tuned via inner spatial CV
+  min_samples_leaf: 1       # tuned via inner spatial CV
+  class_weight: balanced_subsample
+  n_jobs: -1
+  random_state: 42
+
+lightgbm_variant:           # M3-alt early-fusion pixel classifier
+  enabled: false
+  num_leaves: 63
+  learning_rate: 0.05
+  n_estimators: 1000
+
+features: ${data.stack_per_season}x_seasons  # ~60 channels classical
+seed: 42
+tracking: mlflow

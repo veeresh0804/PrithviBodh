@@ -1,0 +1,26 @@
+# M8 TerraMind-base + UPerNet/UNet decoder (TerraTorch). Main foundation model.
+# Inputs: S2 L2A + S1 GRD/RTC + DEM tokens (+NDVI/cover thinking-in-modalities).
+model: terramind
+family: foundation_multimodal
+backbone: terramind-base
+decoder: upernet            # alt: unet
+modalities: ["S2L2A", "S1GRD", "DEM"]
+num_classes: 6
+
+finetune:
+  stage1: { mode: frozen_encoder, data: dw_tiles, epochs: 20 }
+  stage2: { mode: full, data: hyd_patches_100, epochs: 50 }
+  # frozen-then-full per spec
+
+optim:
+  name: AdamW
+  lr_encoder: 0.0001
+  lr_decoder: 0.001
+  scheduler: cosine
+  batch_size: 8             # T4 16GB @224-256px; use checkpointing if OOM
+  mixed_precision: true
+  loss: "weighted_ce+dice"
+
+augment: { flips: true, rot90: true, modality_dropout: 0.2 }
+seed: 42
+framework: terratorch

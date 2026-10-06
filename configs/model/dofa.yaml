@@ -1,0 +1,24 @@
+# M9 DOFA + decoder (TorchGeo). Wavelength-conditioned second-FM comparison.
+model: dofa
+family: foundation_multisensor
+backbone: dofa-base         # pretrained S1/S2+; loaded via torchgeo
+decoder: unet
+modalities: ["S2", "S1"]
+num_classes: 6
+
+finetune:
+  stage1: { mode: frozen_encoder, data: dw_tiles, epochs: 20 }
+  stage2: { mode: full, data: hyd_patches_100, epochs: 50 }
+
+optim:
+  name: AdamW
+  lr_encoder: 0.0001
+  lr_decoder: 0.001
+  scheduler: cosine
+  batch_size: 8
+  mixed_precision: true
+  loss: "weighted_ce+dice"
+
+augment: { flips: true, rot90: true, modality_dropout: 0.2 }
+seed: 42
+framework: torchgeo

@@ -1,0 +1,19 @@
+# Hyderabad AOI — pilot (~60x60km, ~3600 km2). Canonical dev/test area.
+name: hyderabad
+description: "Hyderabad + surroundings pilot AOI"
+
+# WGS84 bounds [min_lon, min_lat, max_lon, max_lat]
+# ~60x60km around 17.38N 78.48E (0.542 deg lat x 0.568 deg lon at this latitude)
+bounds_wgs84: [78.20, 17.11, 78.76, 17.65]
+center: { lat: 17.38, lon: 78.48 }
+size_km: [60, 60]
+area_km2_approx: 3600
+
+# Processing grid (all layers co-registered here); display in WGS84
+crs: "EPSG:32644"       # UTM 44N per project spec
+display_crs: "EPSG:4326"
+resolution_m: 10
+
+# Official boundaries only (Survey of India / state). Placeholder until M1 loads real file.
+admin_file: "data/admin/hyderabad_boundary.geojson"  # TODO(M1): add SoI boundary
+admin_level: "district"

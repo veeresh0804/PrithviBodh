@@ -1,0 +1,16 @@
+# Spatial block CV — mandatory for all headline metrics (Kattenborn et al. 2022:
+# random hold-out can overestimate CNN accuracy by up to 28%).
+method: GroupKFold
+n_splits: 5
+group_by: spatial_block_id
+block_size_km: [3, 10]      # size from semivariogram range (expect 3-10km Hyd)
+seed: 42
+
+rules:
+  test_blocks_never_in_train: true
+  tune_via_inner_spatial_cv: true
+  report_random_split_only_for_inflation_demo: true
+
+metrics: [overall_accuracy, macro_f1, per_class_f1, kappa, mIoU_patch_deep]
+ci: { method: bootstrap, level: 0.95 }
+leakage_test: "tests/test_leakage.py"  # CI must pass: no block in both train+test

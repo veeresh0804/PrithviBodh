@@ -1,0 +1,23 @@
+# Telangana + Andhra Pradesh scale-up — same code, AOI config only (FR-16).
+name: telangana_ap
+description: "Two-state scale-up (~275,000 km2). Annual maps; tiling required."
+
+# Approximate union bounds [min_lon, min_lat, max_lon, max_lat]
+bounds_wgs84: [76.2, 12.6, 84.8, 19.9]
+area_km2_approx: 275000
+
+# UTM note: states span zones 43N (EPSG:32643) / 44N (EPSG:32644) / 45N (EPSG:32645).
+# Process per-zone in native UTM, then mosaic + serve in display CRS.
+processing_crs_per_zone:
+  zone_43N: "EPSG:32643"  # lon 72-78
+  zone_44N: "EPSG:32644"  # lon 78-84 (includes Hyderabad)
+  zone_45N: "EPSG:32645"  # lon 84-90 (eastern AP spillover)
+display_crs: "EPSG:4326"
+resolution_m: 10
+
+# Annual (not seasonal) at scale to bound volume; seasonal only for sample districts.
+temporal_mode: annual
+seasonal_sample_districts: []  # TODO(M7): e.g. [Medchal-Malkajgiri, Rangareddy]
+
+admin_file: "data/admin/telangana_ap_boundary.geojson"  # TODO(M7): add SoI boundaries
+admin_level: "district"  # ward/mandal stats per degradation spec

@@ -1,0 +1,70 @@
+stages:
+  ingest:
+    cmd: python -m geoeco.ingest.export --config configs/aoi/hyderabad.yaml --data configs/data/sentinel.yaml
+    deps:
+      - geoeco/ingest/
+      - configs/aoi/hyderabad.yaml
+      - configs/data/sentinel.yaml
+    outs:
+      - data/raw/composites/
+    params:
+      - configs/data/sentinel.yaml
+
+  features:
+    cmd: python -m geoeco.features.build --config configs/data/sentinel.yaml
+    deps:
+      - geoeco/features/
+      - data/raw/composites/
+    outs:
+      - data/processed/feature_stack/
+      - data/processed/stac/catalog.json
+
+  sample:
+    cmd: python -m geoeco.features.sampling --config configs/eval/spatial_cv.yaml
+    deps:
+      - geoeco/features/sampling.py
+      - geoeco/labels/
+      - data/processed/feature_stack/
+    outs:
+      - data/processed/points.parquet
+      - data/processed/chips/
+
+  train:
+    cmd: python -m geoeco.train.train_classical --model configs/model/rf.yaml && python -m geoeco.train.train_seg --model configs/model/unet.yaml
+    deps:
+      - geoeco/models/
+      - geoeco/train/
+      - data/processed/points.parquet
+      - data/processed/chips/
+    outs:
+      - models/
+    metrics:
+      - metrics/train.json:
+          cache: false
+
+  infer:
+    cmd: python -m geoeco.infer.tiled_inference --aoi configs/aoi/hyderabad.yaml
+    deps:
+      - geoeco/infer/
+      - models/
+      - data/processed/feature_stack/
+    outs:
+      - data/outputs/maps/
+
+  analytics:
+    cmd: python -m geoeco.analytics.change --from 2019 --to 2025 && python -m geoeco.analytics.indicators
+    deps:
+      - geoeco/analytics/
+      - data/outputs/maps/
+    outs:
+      - data/outputs/change/
+      - data/outputs/indicators/
+
+  evaluate:
+    cmd: python -m geoeco.evaluation.spatial_cv --config configs/eval/spatial_cv.yaml
+    deps:
+      - geoeco/evaluation/
+      - data/outputs/maps/
+    metrics:
+      - metrics/eval.json:
+          cache: false

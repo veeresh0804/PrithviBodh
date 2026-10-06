@@ -1,0 +1,5 @@
+# NOTE: TiTiler runs from its official image — no custom build needed.
+# This file exists so `docker-compose.yml` has an explicit, reviewable pin.
+# Override the COG root via env COG_ROOT (R2/HF mirror mounted as a volume).
+FROM ghcr.io/developmentseed/titiler:0.18
+ENV COG_ROOT=/cog

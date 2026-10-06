@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.venv/
+.venv/
+venv/
+.env/
+.env.*
+
+# Tooling / repro
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hydra/
+mlruns/
+*.log
+
+# Data / outputs (versioned via DVC + remote, never git)
+data/
+*.tif
+*.tiff
+*.cog
+*.parquet
+*.h5
+*.ckpt
+*.pt
+*.pth
+
+# Secrets / local
+.env
+secrets.yaml
+service-account*.json
+ee-credentials/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/

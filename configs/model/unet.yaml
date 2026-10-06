@@ -1,0 +1,28 @@
+# M6 U-Net early fusion: all channels stacked -> single encoder-decoder.
+model: unet
+family: deep_early_fusion
+encoder: resnet34            # segmentation_models_pytorch
+encoder_weights: imagenet
+in_channels: 20              # per-season stack; seasons stacked or time-dim per train config
+num_classes: 6
+decoder_attention: null
+
+optim:
+  name: AdamW
+  lr_encoder: 0.0001
+  lr_decoder: 0.001
+  weight_decay: 0.01
+  scheduler: cosine
+  epochs: [50, 100]          # pretrain DW -> fine-tune Hyd
+  batch_size: [8, 16]        # T4 16GB: use 8 at 256px, 16 at 224px
+  mixed_precision: true
+  loss: "weighted_ce+dice"
+
+augment:
+  flips: true
+  rot90: true
+  brightness_jitter_optical_only: true
+  modality_dropout: 0.2      # randomly blank optical -> SAR fallback (monsoon sim)
+
+seed: 42
+framework: pytorch_lightning
