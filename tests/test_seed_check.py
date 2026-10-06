@@ -1,18 +1,26 @@
-"""Tests for the pre-registered seed-acceptance checker.
+"""Tests for the seed-acceptance checker (GATE 1 is a PROPORTION).
 
 Fixtures are tiny synthetic skeletons (no network, no data files). Thresholds
-are NOT hard-coded here — the checker reads them from
-configs/labels/labelling.yaml; fixtures use large margins (gap 0.0 vs 37.8 km
-against a 5.0 km gate; core 2 vs 0 points against a >= 1 gate) so outcomes are
-robust, not threshold-fitted.
+are NOT hard-coded here — the required core counts are derived from
+configs/labels/labelling.yaml (`seed_acceptance.min_core_share_per_side` x
+`splits:` totals, via the checker's own config loader), so fixtures track the
+rule instead of fitting it. Core points sit exactly on the core
+(78.48, 17.38, dist 0 km); outer band points reuse the MIDS layout at
+~11.9-23.8 km from the core (outside the 10 km radius) so band span holds
+while core counts are controlled exactly.
 """
 import json
+import math
 
 from geoeco.labels import seed_check as SC
+from geoeco.labels.pipeline import load_labelling_config
 
 MINLON = 78.20
 BAND_W = 0.56 / 5  # same 5 equal bands as the acceptance rule (B0-B4 width)
 MIDS = [MINLON + (b + 0.5) * BAND_W for b in range(5)]
+
+CORE_LON, CORE_LAT = 78.48, 17.38
+OUTER_MIDS = (MIDS[0], MIDS[1], MIDS[3], MIDS[4])  # every band but the core band
 
 
 def _write_skeleton(path, rows):
@@ -33,6 +41,32 @@ def _write_skeleton(path, rows):
     return path
 
 
+def _required_counts():
+    """(share, n_test_cfg, n_train_cfg, req_test, req_train) from config."""
+    ctx = load_labelling_config()
+    labelling = ctx["labelling"]
+    share = float(labelling["seed_acceptance"]["min_core_share_per_side"])
+    n_test = int(labelling["splits"]["test"])
+    n_train = int(labelling["splits"]["train"])
+    return share, n_test, n_train, math.ceil(share * n_test), math.ceil(share * n_train)
+
+
+def _core_share_rows(n_test_core, n_train_core):
+    """Exact core counts per side + identical outer-band points (8/side, all
+    outside the core radius) so band span holds and the mean-dist gap stays
+    small — only the core gate varies across fixtures."""
+    rows = []
+    for _ in range(n_test_core):
+        rows.append(("test", CORE_LON, CORE_LAT))
+    for _ in range(n_train_core):
+        rows.append(("train", CORE_LON, CORE_LAT))
+    for split in ("test", "train"):
+        for mid in OUTER_MIDS:
+            rows.append((split, mid, 17.38))
+            rows.append((split, mid, 17.39))
+    return rows
+
+
 def _balanced_rows():
     """Both sides share the same balanced layout: all 5 bands + core."""
     rows = []
@@ -43,9 +77,17 @@ def _balanced_rows():
     return rows
 
 
-def test_balanced_fixture_passes(tmp_path):
-    p = _write_skeleton(tmp_path / "balanced.geojson", _balanced_rows())
+def test_core_share_pass(tmp_path):
+    """Both sides at exactly the required 5% share → all gates pass."""
+    _, _, _, req_test, req_train = _required_counts()
+    p = _write_skeleton(tmp_path / "share_pass.geojson",
+                        _core_share_rows(req_test, req_train))
     passed, table = SC.check_seed_acceptance(p)
+    assert table["core"]["test_within"] == req_test
+    assert table["core"]["train_within"] == req_train
+    assert table["core"]["required_test"] == req_test
+    assert table["core"]["required_train"] == req_train
+    assert table["gates"]["core_both_sides"]["passed"] is True
     assert passed is True
     assert table["passed"] is True
     # Proxy-table shape matches audit A3 columns.
@@ -54,6 +96,52 @@ def test_balanced_fixture_passes(tmp_path):
             assert key in table[split]
     assert all(g["passed"] for g in table["gates"].values())
     assert SC.main(["--skeleton", str(p)]) == 0
+
+
+def test_core_share_fail_train_side(tmp_path):
+    """Train one point below its required share (test exact) → core gate
+    alone rejects; gap and band span still pass (isolation)."""
+    _, _, _, req_test, req_train = _required_counts()
+    p = _write_skeleton(tmp_path / "share_fail_train.geojson",
+                        _core_share_rows(req_test, req_train - 1))
+    passed, table = SC.check_seed_acceptance(p)
+    assert passed is False
+    assert table["core"]["test_within"] == req_test
+    assert table["core"]["train_within"] == req_train - 1
+    assert table["gates"]["core_both_sides"]["passed"] is False
+    # Isolation: the other gates still pass on this fixture.
+    assert table["gates"]["mean_dist_gap"]["passed"] is True
+    assert table["gates"]["lon_band_span"]["passed"] is True
+
+
+def test_core_share_fail_test_side(tmp_path):
+    """Mirror: test one point below its required share → core gate rejects;
+    gap and band span still pass (isolation)."""
+    _, _, _, req_test, req_train = _required_counts()
+    p = _write_skeleton(tmp_path / "share_fail_test.geojson",
+                        _core_share_rows(req_test - 1, req_train))
+    passed, table = SC.check_seed_acceptance(p)
+    assert passed is False
+    assert table["core"]["test_within"] == req_test - 1
+    assert table["core"]["train_within"] == req_train
+    assert table["gates"]["core_both_sides"]["passed"] is False
+    # Isolation: the other gates still pass on this fixture.
+    assert table["gates"]["mean_dist_gap"]["passed"] is True
+    assert table["gates"]["lon_band_span"]["passed"] is True
+
+
+def test_core_share_percentage_not_absolute(tmp_path):
+    """2 core points per side passed the OLD absolute floor (>= 1) but must
+    FAIL the proportional gate — the percentage, not the count, is enforced."""
+    _, _, _, req_test, req_train = _required_counts()
+    assert req_test > 2 and req_train > 2  # guard: fixture is below the share
+    p = _write_skeleton(tmp_path / "share_old_floor.geojson",
+                        _core_share_rows(2, 2))
+    passed, table = SC.check_seed_acceptance(p)
+    assert passed is False
+    assert table["core"]["test_within"] == 2
+    assert table["core"]["train_within"] == 2
+    assert table["gates"]["core_both_sides"]["passed"] is False
 
 
 def test_offset_fixture_fails_on_gap(tmp_path, capsys):

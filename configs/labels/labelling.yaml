@@ -81,18 +81,24 @@ seed_acceptance:
   # (core_lon, core_lat) under geoeco/labels/grid.py build_cells geometry
   # (origin at AOI minlon/minlat; seed-42 id is g05_06 — diagnostic only, the
   # gate itself is radius-based so it works on ANY skeleton including bands).
-  # Operational gate: EACH split must place >= min_core_points_per_side points
-  # within core_radius_km of the core point. "Core-adjacent" therefore means
-  # "within core_radius_km", NOT an 8-neighbour cell: the grid design enforces
-  # a one-cell 8-neighbourhood buffer between opposite sides, so a test core
-  # cell can NEVER touch a train 8-neighbour by construction — an 8-neighbour
-  # gate would be unsatisfiable. core_radius_km = 10.0 = 2x fine_block_size_m:
-  # the minimum radius that CAN hold both a test and a train cell (core cell +
-  # buffer ring + nearest opposite-side cell). Existence floor (1 pt) is
-  # deliberate: this gate checks urban-fabric presence on both sides, while
-  # proportionality is GATE 2's job.
+  # Operational gate: EACH split must place >= min_core_share_per_side share
+  # of its OWN configured split total (labelling.yaml `splits:`, read by the
+  # checker — never hard-coded) within core_radius_km of the core point.
+  # "Core-adjacent" therefore means "within core_radius_km", NOT an 8-neighbour
+  # cell: the grid design enforces a one-cell 8-neighbourhood buffer between
+  # opposite sides, so a test core cell can NEVER touch a train 8-neighbour by
+  # construction — an 8-neighbour gate would be unsatisfiable.
+  # core_radius_km = 10.0 = 2x fine_block_size_m: the minimum radius that CAN
+  # hold both a test and a train cell (core cell + buffer ring + nearest
+  # opposite-side cell). Threshold 0.05 (5%): test needs >= 100 of 2000,
+  # train >= 75 of 1500 (ceil of share x configured split total).
+  # CHOSEN POST-HOC 2026-10-06 — NOT pre-registered: set AFTER observing the
+  # seed-6 zoned draw (test 177 / train 123 within 10 km). Disclosed here, not
+  # back-dated. Rationale: a side's urban signal below ~5% share is noise in
+  # per-class F1 bootstrap CIs. Replaces the old absolute floor (>= 1 pt),
+  # which became meaningless once zoned assignment constructs balance.
   core_radius_km: 10.0
-  min_core_points_per_side: 1
+  min_core_share_per_side: 0.05
   # GATE 2 — mean_dist_gap: |mean_dist_test - mean_dist_train| <= threshold,
   # where mean_dist_* is the audit-A3 proxy (mean haversine km to the core
   # point, same numbers as data/labels/audit/stats.json distance_proxy_km).

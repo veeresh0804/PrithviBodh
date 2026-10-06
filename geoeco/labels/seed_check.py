@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -36,7 +37,7 @@ def _acceptance_cfg(labelling: dict) -> dict:
         raise KeyError("labelling.yaml missing required block: seed_acceptance")
     acc = labelling["seed_acceptance"]
     require_keys(acc, ["core_lon", "core_lat", "core_radius_km",
-                       "min_core_points_per_side", "max_mean_dist_gap_km",
+                       "min_core_share_per_side", "max_mean_dist_gap_km",
                        "n_lon_bands", "min_bands_per_side",
                        "min_points_per_band"], name="seed_acceptance")
     return acc
@@ -86,7 +87,20 @@ def check_seed_acceptance(skeleton_geojson: str | Path) -> tuple[bool, dict]:
     core_lon = float(acc["core_lon"])
     core_lat = float(acc["core_lat"])
     core_radius_km = float(acc["core_radius_km"])
-    min_core = int(acc["min_core_points_per_side"])
+    share = float(acc["min_core_share_per_side"])
+    if not 0.0 < share <= 1.0:
+        raise ValueError(
+            f"seed_acceptance min_core_share_per_side must be in (0, 1], "
+            f"got {share!r}")
+    # Split totals are the CONFIGURED design totals (labelling.yaml splits),
+    # not the skeleton's observed n — thresholds are pre-computed from design.
+    require_keys(labelling, ["splits"], name="labelling.yaml")
+    require_keys(labelling["splits"], ["test", "train"],
+                 name="labelling.yaml splits")
+    n_test_cfg = int(labelling["splits"]["test"])
+    n_train_cfg = int(labelling["splits"]["train"])
+    req_test = math.ceil(share * n_test_cfg)
+    req_train = math.ceil(share * n_train_cfg)
     max_gap = float(acc["max_mean_dist_gap_km"])
     n_bands = int(acc["n_lon_bands"])
     min_span = int(acc["min_bands_per_side"])
@@ -125,13 +139,15 @@ def check_seed_acceptance(skeleton_geojson: str | Path) -> tuple[bool, dict]:
     gap = round(abs(dist["test"]["mean_dist_km"] - dist["train"]["mean_dist_km"]), 2)
     gap_ok = gap <= max_gap
 
-    # GATE 1 — core presence on both sides (haversine reused from geo_stats).
+    # GATE 1 — core share on both sides (haversine reused from geo_stats).
+    # Each side must hold >= share of its OWN configured split total within
+    # core_radius_km (proportion, not absolute count).
     core_counts = {}
     for split, pts in by_split.items():
         core_counts[split] = sum(1 for lon, lat in pts
                                  if hav(lon, lat) <= core_radius_km)
-    core_ok = (core_counts["test"] >= min_core
-               and core_counts["train"] >= min_core)
+    core_ok = (core_counts["test"] >= req_test
+               and core_counts["train"] >= req_train)
 
     # GATE 3 — longitude-band span (indexing reused from pipeline.fold_of_lon).
     band_w = (maxlon - minlon) / n_bands
@@ -149,8 +165,10 @@ def check_seed_acceptance(skeleton_geojson: str | Path) -> tuple[bool, dict]:
     gates = {
         GATE_CORE: {"passed": core_ok, "detail":
                     f"within {core_radius_km} km of core: "
-                    f"test={core_counts['test']} train={core_counts['train']} "
-                    f"(need >= {min_core} each)"},
+                    f"test={core_counts['test']} (need >= {share * 100:g}% "
+                    f"of {n_test_cfg} = {req_test}) "
+                    f"train={core_counts['train']} (need >= {share * 100:g}% "
+                    f"of {n_train_cfg} = {req_train})"},
         GATE_GAP: {"passed": gap_ok, "detail":
                    f"|{dist['test']['mean_dist_km']} - "
                    f"{dist['train']['mean_dist_km']}| = {gap} km "
@@ -171,9 +189,12 @@ def check_seed_acceptance(skeleton_geojson: str | Path) -> tuple[bool, dict]:
         "train": dist["train"],
         "mean_dist_gap_km": gap,
         "core": {"radius_km": core_radius_km,
+                 "share_per_side": share,
+                 "split_totals": {"test": n_test_cfg, "train": n_train_cfg},
+                 "required_test": req_test,
+                 "required_train": req_train,
                  "test_within": core_counts["test"],
-                 "train_within": core_counts["train"],
-                 "required_per_side": min_core},
+                 "train_within": core_counts["train"]},
         "bands": {"n_bands": n_bands, "test_bands": span["test"],
                   "train_bands": span["train"], "required_per_side": min_span,
                   "min_points_per_band": min_per_band},
