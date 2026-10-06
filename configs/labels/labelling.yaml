@@ -54,18 +54,26 @@ grid_cells:
 # non-sliver is the last column at ~0.9 width) while excluding only the sliver
 # row. Read by geoeco/labels/grid.py assign_cells (never hard-coded).
 min_cell_area_fraction: 0.5
+# Zone edges (km from the urban core) for zone-stratified cell assignment:
+# core < 10 km, mid 10-25 km, far > 25 km. The core edge doubles as the
+# seed-acceptance core_radius_km, so assignment zones and acceptance gates
+# stratify the same geography. Read by grid.assign_cells_zoned.
+zone_edges_km: [10.0, 25.0]
 
-# Pre-registered seed-acceptance rule (covariate balance ONLY — never model
-# accuracy). Any grid-draw skeleton must pass ALL three gates below, checked by
+# Seed-acceptance rule (covariate balance ONLY — never model accuracy). Any
+# grid-draw skeleton must pass ALL three gates below, checked by
 # `python -m geoeco.labels.seed_check --skeleton <path>` (see
 # geoeco/labels/seed_check.py). A draw is accepted only on gates computed from
 # point coordinates (distance-to-centre proxy + longitude spread + core
-# presence). Thresholds were fixed BEFORE evaluating candidate seeds and are
-# justified per-gate below; changing them requires re-registration (edit here
-# with a dated comment), never silent tuning.
+# presence). Thresholds were CALIBRATED from an 8-draw pilot scan (mean-dist
+# gaps 1.4-10.9 km, ~25% passing at 5.0 km) + buffer-distance reasoning (see
+# per-gate notes), THEN frozen before the acceptance scans (seed 42 rejected,
+# seed 3 rejected post-fix, seed 4 quota-fail, seed 5 accepted). Changing any
+# threshold now requires a dated comment + re-running the checker on the
+# accepted seed, never silent tuning.
 seed_acceptance:
   # Urban core point. Mirrors configs/aoi/hyderabad.yaml center (17.38N 78.48E);
-  # duplicated here so the rule is self-contained and pre-registered.
+  # duplicated here so the rule is self-contained.
   core_lon: 78.48
   core_lat: 17.38
   # GATE 1 — core_both_sides ("core cell on BOTH sides", defined precisely):

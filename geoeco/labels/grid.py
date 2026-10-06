@@ -69,6 +69,79 @@ def neighbours(cell: dict, by_pos: dict[tuple[int, int], str]) -> list[str]:
     return out
 
 
+def zone_of_cell(cell: dict, edge_near_km: float = 10.0,
+                 edge_far_km: float = 25.0) -> str:
+    """Distance zone of a cell centroid: core (<near), mid (<=far), far.
+
+    Centroid haversine reuses geo_stats.hav (same core + math as the seed
+    checker, so assignment zones and acceptance gates agree on geography).
+    """
+    from geoeco.labels.geo_stats import hav
+    cx = (cell["x0"] + cell["x1"]) / 2.0
+    cy = (cell["y0"] + cell["y1"]) / 2.0
+    d = hav(cx, cy)
+    if d < edge_near_km:
+        return "core"
+    if d <= edge_far_km:
+        return "mid"
+    return "far"
+
+
+def assign_cells_zoned(cells: list[dict], seed: int,
+                       quotas_per_zone: dict[str, dict[str, int]],
+                       min_area_fraction: float = 0.5,
+                       zone_edges: tuple[float, float] = (10.0, 25.0)) -> dict[str, str]:
+    """Zone-stratified assignment: per-zone test/train quotas, global buffer.
+
+    Zones are filled core-first (the constrained zone), then mid, far; the
+    one-cell 8-neighbourhood buffer is enforced GLOBALLY (including across
+    zone boundaries) and sliver cells are excluded exactly as in
+    assign_cells. Fails loudly when any zone quota is unmet. Quotas must sum
+    to the design totals — checked by the caller/tests, not here.
+    """
+    rng = np.random.Generator(np.random.PCG64(seed))
+    by_pos = {(c["col"], c["row"]): c["id"] for c in cells}
+    by_id = {c["id"]: c for c in cells}
+    ys = sorted({c["y0"] for c in cells})
+    step_y = min((b - a for a, b in itertools.pairwise(ys)), default=0.0)
+    cell_m = step_y * KM_PER_DEG_LAT * 1000.0 if step_y > 0 else 0.0
+    assignable = sorted(c["id"] for c in cells
+                        if cell_area_fraction(c, cell_m) >= min_area_fraction)
+    zoned: dict[str, list[str]] = {"core": [], "mid": [], "far": []}
+    for cid in assignable:
+        zoned[zone_of_cell(by_id[cid], *zone_edges)].append(cid)
+    side: dict[str, str] = {}
+    for zone_name in ("core", "mid", "far"):
+        q = quotas_per_zone[zone_name]
+        counts = {"test": 0, "train": 0}
+        for _ in range(10):
+            order = rng.permutation([c for c in zoned[zone_name] if c not in side])
+            progressed = False
+            for cid in order:
+                if counts["test"] >= q["test"] and counts["train"] >= q["train"]:
+                    break
+                for cand in sorted(("test", "train"),
+                                   key=lambda s: counts[s] / q[s] if q[s] else 1):
+                    if counts[cand] >= q[cand]:
+                        continue
+                    opp = "train" if cand == "test" else "test"
+                    if any(side.get(n) == opp
+                           for n in neighbours(by_id[cid], by_pos)):
+                        continue
+                    side[cid] = cand
+                    counts[cand] += 1
+                    progressed = True
+                    break
+            if counts["test"] >= q["test"] and counts["train"] >= q["train"]:
+                break
+            if not progressed:
+                break
+        if counts["test"] < q["test"] or counts["train"] < q["train"]:
+            raise ValueError(f"Zone {zone_name} quotas unmet {counts} vs {q}; "
+                             "report, do not relax silently.")
+    return side
+
+
 def assign_cells(cells: list[dict], seed: int, test_quota: int,
                  train_quota: int, min_area_fraction: float = 0.5) -> dict[str, str]:
     """Random greedy assignment with opposite-side buffer. Fails loudly if
