@@ -1,6 +1,9 @@
 stages:
+  # TODO(M1): no CLI yet — geoeco/ingest/export.py is library-only
+  # (no `if __name__ == "__main__"`, no argparse). Non-blocking no-op until
+  # the ingest CLI lands (owner: geoeco/ stream).
   ingest:
-    cmd: python -m geoeco.ingest.export --config configs/aoi/hyderabad.yaml --data configs/data/sentinel.yaml
+    cmd: 'echo TODO-M1: ingest has no runnable CLI yet — skipping'
     deps:
       - geoeco/ingest/
       - configs/aoi/hyderabad.yaml
@@ -10,8 +13,11 @@ stages:
     params:
       - configs/data/sentinel.yaml
 
+  # TODO(M1): no CLI yet — geoeco/features/build.py does not exist, and
+  # geoeco/features/sampling.py has no `__main__`/argparse. Non-blocking
+  # no-op until the features CLI lands (owner: geoeco/ stream).
   features:
-    cmd: python -m geoeco.features.build --config configs/data/sentinel.yaml
+    cmd: 'echo TODO-M1: features has no runnable CLI yet — skipping'
     deps:
       - geoeco/features/
       - data/raw/composites/
@@ -19,8 +25,11 @@ stages:
       - data/processed/feature_stack/
       - data/processed/stac/catalog.json
 
+  # TODO(M1): no CLI yet — geoeco/features/sampling.py is library-only
+  # (no `__main__`/argparse). Non-blocking no-op until the sampling CLI
+  # lands (owner: geoeco/ stream).
   sample:
-    cmd: python -m geoeco.features.sampling --config configs/eval/spatial_cv.yaml
+    cmd: 'echo TODO-M1: sampling has no runnable CLI yet — skipping'
     deps:
       - geoeco/features/sampling.py
       - geoeco/labels/
@@ -29,6 +38,8 @@ stages:
       - data/processed/points.parquet
       - data/processed/chips/
 
+  # OK — geoeco/labels/pipeline.py:248 (--stage sample|split|all, --config)
+  # and geoeco/labels/qgis.py:134 (no required flags) both have CLIs.
   labelling:
     cmd: python -m geoeco.labels.pipeline --stage all && python -m geoeco.labels.qgis
     deps:
@@ -44,8 +55,14 @@ stages:
     params:
       - configs/labels/labelling.yaml
 
+  # OK (flags fixed to match real CLIs) —
+  # geoeco/train/train_classical.py:85 requires --points plus
+  # --model M1|M2|M3|M3-lgbm|M5 (a model ID, not a yaml path);
+  # geoeco/train/train_seg.py:146 requires --stage + --data with
+  # --model M6|M7|M8|M9. Configs configs/model/rf.yaml (M5-class RF) and
+  # configs/model/unet.yaml (M6) document hyperparams, not CLI input.
   train:
-    cmd: python -m geoeco.train.train_classical --model configs/model/rf.yaml && python -m geoeco.train.train_seg --model configs/model/unet.yaml
+    cmd: python -m geoeco.train.train_classical --points data/processed/points.parquet --model M5 --seed 42 && python -m geoeco.train.train_seg --stage hyd_finetune --data data/processed/chips/ --model M6
     deps:
       - geoeco/models/
       - geoeco/train/
@@ -57,8 +74,11 @@ stages:
       - metrics/train.json:
           cache: false
 
+  # TODO(M1): no CLI yet — geoeco/infer/tiled_inference.py is library-only
+  # (no `__main__`/argparse). Non-blocking no-op until the infer CLI lands
+  # (owner: geoeco/ stream).
   infer:
-    cmd: python -m geoeco.infer.tiled_inference --aoi configs/aoi/hyderabad.yaml
+    cmd: 'echo TODO-M1: infer has no runnable CLI yet — skipping'
     deps:
       - geoeco/infer/
       - models/
@@ -66,8 +86,11 @@ stages:
     outs:
       - data/outputs/maps/
 
+  # TODO(M1): no CLI yet — geoeco/analytics/change.py and
+  # geoeco/analytics/indicators.py are library-only (no `__main__`/argparse).
+  # Non-blocking no-op until analytics CLIs land (owner: geoeco/ stream).
   analytics:
-    cmd: python -m geoeco.analytics.change --from 2019 --to 2025 && python -m geoeco.analytics.indicators
+    cmd: 'echo TODO-M1: analytics has no runnable CLI yet — skipping'
     deps:
       - geoeco/analytics/
       - data/outputs/maps/
@@ -75,8 +98,11 @@ stages:
       - data/outputs/change/
       - data/outputs/indicators/
 
+  # TODO(M1): no CLI yet — geoeco/evaluation/spatial_cv.py is library-only
+  # (no `__main__`/argparse). Non-blocking no-op until the evaluation CLI
+  # lands (owner: geoeco/ stream).
   evaluate:
-    cmd: python -m geoeco.evaluation.spatial_cv --config configs/eval/spatial_cv.yaml
+    cmd: 'echo TODO-M1: evaluation has no runnable CLI yet — skipping'
     deps:
       - geoeco/evaluation/
       - data/outputs/maps/

@@ -26,4 +26,4 @@ labels-merge:
 	$(PY) -m geoeco.labels.merge
 
 labels-test:
-	pytest -q tests/test_labelling.py tests/test_leakage.py -v
+	$(PY) -m pytest tests/test_labelling.py tests/test_leakage.py -v
