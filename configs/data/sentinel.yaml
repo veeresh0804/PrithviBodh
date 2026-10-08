@@ -1,0 +1,44 @@
+# Sentinel + DEM source spec. Primary years 2019 (S1A+B) and 2025 (S1C; S1D from 2026-04-17).
+years: [2019, 2025]
+
+seasons:
+  pre:      { months: [3, 4, 5],   label: "pre-monsoon" }
+  monsoon:  { months: [6, 7, 8, 9], label: "monsoon" }
+  post:     { months: [10, 11, 12], label: "post-monsoon" }
+
+sentinel2:
+  source: "COPERNICUS/S2_SR_HARMONIZED"
+  cloud_mask_source: "GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED"
+  cloud_score_band: "cs"
+  cloud_threshold: 0.6          # mask pixels with cs > 0.6 (tunable)
+  bands: ["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]
+  resample_20m_to_10m: "bilinear"
+  composite: "median"
+  track_valid_obs_count: true   # needed for cloud-stress analysis
+  indices: ["NDVI", "EVI", "MNDWI", "NDBI"]
+
+sentinel1:
+  source: "COPERNICUS/S1_GRD"
+  mode: "IW"
+  polarizations: ["VV", "VH"]
+  orbit_pass: "TBD_week2"       # M0-W2: availability report picks one orbit
+  edge_noise_mask: true
+  speckle_filter: "RefinedLee"  # fallback: focal_median
+  features: ["VV_dB", "VH_dB", "VV_minus_VH_ratio", "VH_std_seasonal"]
+  composite: "median"
+
+dem:
+  source: "Copernicus_GLO30"
+  derived: ["elevation", "slope"]
+  target_resolution_m: 10
+
+# Feature stack per season: 14 optical (10 bands + 4 indices) + 4 SAR + 2 terrain = 20.
+# Classical models stack 3 seasons = ~60 channels; deep models use 20/season as time dim or stacked.
+stack_per_season: 20
+
+export:
+  format: "COG_int16_scaled"
+  internal_tiling: 256
+  catalog: "STAC"
+
+classes_default6: ["water", "tree_cover", "cropland", "built_up", "bare_rocky", "grass_shrub"]
