@@ -204,8 +204,6 @@ def write_catalog_json(outdir: Path, collection_id: str, description: str,
     except ImportError:
         has_pystac = False
     if has_pystac:
-        import pystac
-
         catalog = pystac.Catalog(id=f"{collection_id}-catalog",
                                  description=description)
         collection = create_collection(collection_id, description)
