@@ -21,7 +21,7 @@ mlflow.db
 *.log
 
 # Data / outputs (versioned via DVC + remote, never git)
-data/
+/data/
 *.tif
 *.tiff
 *.cog
