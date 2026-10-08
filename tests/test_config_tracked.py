@@ -42,8 +42,8 @@ def _git(*args: str) -> subprocess.CompletedProcess:
             text=True,
             timeout=60,
         )
-    except FileNotFoundError:
-        raise AssertionError("git binary not found: this test requires git")
+    except FileNotFoundError as e:
+        raise AssertionError("git binary not found: this test requires git") from e
 
 
 def _dvc_config_refs() -> set[str]:
