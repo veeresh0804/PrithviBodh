@@ -326,18 +326,7 @@ def test_s2_export_plan_defaults(capsys) -> None:
 
 
 def test_s1_export_plan_requires_orbit(capsys) -> None:
-    # With orbit_pass configured (ASCENDING in sentinel.yaml), the script runs
-    # and prints the plan instead of exiting 2. The TBD_week2 path is tested
-    # by running with the unmodified config (outside this test's scope).
-    _rc = S1X.main([])
-    assert _rc == 0  # plan printed, no error
-    plan = json.loads(capsys.readouterr().out)
-    assert plan["exported"] is False
-    assert plan["task_count"] == 6
-    names = [w["filename"] for w in plan["windows"]]
-    assert "hyderabad_s1_ASCENDING_2019_pre.tif" in names
-    assert all("ASCENDING" in name for name in names)
-    assert plan["query"]["orbit_pass"] == "ASCENDING"
+    assert _rc(S1X.main, []) == 2  # config orbit_pass is TBD -> never guessed
 
 
 def test_dem_export_plan_defaults(capsys) -> None:
