@@ -1,9 +1,8 @@
 stages:
-  # TODO(M1): no CLI yet — geoeco/ingest/export.py is library-only
-  # (no `if __name__ == "__main__"`, no argparse). Non-blocking no-op until
-  # the ingest CLI lands (owner: geoeco/ stream).
+  # OK — geoeco/ingest/export.py:296 (main with --config/--data/--out/--seed/
+  # --dry-run). Exits 2 without EE creds after writing the export manifest.
   ingest:
-    cmd: 'echo TODO-M1: ingest has no runnable CLI yet — skipping'
+    cmd: python -m geoeco.ingest.export --config configs/aoi/hyderabad.yaml --data configs/data/sentinel.yaml
     deps:
       - geoeco/ingest/
       - configs/aoi/hyderabad.yaml
@@ -13,11 +12,10 @@ stages:
     params:
       - configs/data/sentinel.yaml
 
-  # TODO(M1): no CLI yet — geoeco/features/build.py does not exist, and
-  # geoeco/features/sampling.py has no `__main__`/argparse. Non-blocking
-  # no-op until the features CLI lands (owner: geoeco/ stream).
+  # OK — geoeco/features/build.py:107 (--config/--out/--composites-dir).
+  # Refuses (exit 1) until the ingest stage produces data/raw/composites/.
   features:
-    cmd: 'echo TODO-M1: features has no runnable CLI yet — skipping'
+    cmd: python -m geoeco.features.build --config configs/data/sentinel.yaml
     deps:
       - geoeco/features/
       - data/raw/composites/
@@ -25,11 +23,9 @@ stages:
       - data/processed/feature_stack/
       - data/processed/stac/catalog.json
 
-  # TODO(M1): no CLI yet — geoeco/features/sampling.py is library-only
-  # (no `__main__`/argparse). Non-blocking no-op until the sampling CLI
-  # lands (owner: geoeco/ stream).
+  # OK — geoeco/features/sampling.py has a --config CLI printing the CV plan.
   sample:
-    cmd: 'echo TODO-M1: sampling has no runnable CLI yet — skipping'
+    cmd: python -m geoeco.features.sampling --config configs/eval/spatial_cv.yaml
     deps:
       - geoeco/features/sampling.py
       - geoeco/labels/
@@ -74,11 +70,11 @@ stages:
       - metrics/train.json:
           cache: false
 
-  # TODO(M1): no CLI yet — geoeco/infer/tiled_inference.py is library-only
-  # (no `__main__`/argparse). Non-blocking no-op until the infer CLI lands
-  # (owner: geoeco/ stream).
+  # OK — geoeco/infer/tiled_inference.py:174 (--aoi/--model/--stack/--out,
+  # 256-px tiles, 32-px overlap; --smoke proves the blend path). Refuses
+  # (exit 1) until models/ and the feature stack exist.
   infer:
-    cmd: 'echo TODO-M1: infer has no runnable CLI yet — skipping'
+    cmd: python -m geoeco.infer.tiled_inference --aoi configs/aoi/hyderabad.yaml --model models/ --stack data/processed/feature_stack/ --out data/outputs/maps/
     deps:
       - geoeco/infer/
       - models/
@@ -86,11 +82,10 @@ stages:
     outs:
       - data/outputs/maps/
 
-  # TODO(M1): no CLI yet — geoeco/analytics/change.py and
-  # geoeco/analytics/indicators.py are library-only (no `__main__`/argparse).
-  # Non-blocking no-op until analytics CLIs land (owner: geoeco/ stream).
+  # OK — geoeco/analytics/change.py:116 (--from/--to required) and
+  # indicators.py. Both refuse (exit 1) until classified maps exist.
   analytics:
-    cmd: 'echo TODO-M1: analytics has no runnable CLI yet — skipping'
+    cmd: python -m geoeco.analytics.change --from 2019 --to 2025 && python -m geoeco.analytics.indicators
     deps:
       - geoeco/analytics/
       - data/outputs/maps/
@@ -98,11 +93,10 @@ stages:
       - data/outputs/change/
       - data/outputs/indicators/
 
-  # TODO(M1): no CLI yet — geoeco/evaluation/spatial_cv.py is library-only
-  # (no `__main__`/argparse). Non-blocking no-op until the evaluation CLI
-  # lands (owner: geoeco/ stream).
+  # OK — geoeco/evaluation/spatial_cv.py:103 (--config; GroupKFold smoke with
+  # disjointness proof, no data required).
   evaluate:
-    cmd: 'echo TODO-M1: evaluation has no runnable CLI yet — skipping'
+    cmd: python -m geoeco.evaluation.spatial_cv --config configs/eval/spatial_cv.yaml
     deps:
       - geoeco/evaluation/
       - data/outputs/maps/

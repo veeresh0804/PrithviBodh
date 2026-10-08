@@ -8,9 +8,25 @@ intent/metadata so pipelines can call export without a STAC backend.
 
 from __future__ import annotations
 
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+from geoeco.ingest.composites import season_date_range
+from geoeco.ingest.stac import item_dict
+from geoeco.utils.config import load_yaml_config, require_keys
+
+REPO = Path(__file__).resolve().parents[2]
+DEFAULT_AOI_CFG = REPO / "configs" / "aoi" / "hyderabad.yaml"
+DEFAULT_DATA_CFG = REPO / "configs" / "data" / "sentinel.yaml"
+DEFAULT_OUT = REPO / "data" / "raw" / "composites"
+SPATIAL_CV_CFG = REPO / "configs" / "eval" / "spatial_cv.yaml"
+EE_AUTH_HINT = "needs earthengine authenticate"
 
 COG_BLOCKSIZE: int = 256
 COG_COMPRESS: str = "DEFLATE"
@@ -118,3 +134,214 @@ def stac_register_stub(cog_path: str, item_id: str) -> dict[str, Any]:
         Stub record dict.
     """
     return {"item_id": item_id, "asset_href": cog_path, "status": "pending-stac-write"}
+
+
+def ee_available() -> tuple[bool, str]:
+    """Check EE credentials without any network use (credential-file check only)."""
+    try:
+        from ee import oauth
+
+        cred_path = oauth.get_credentials_path()
+    except ImportError:
+        return False, "earthengine-api not installed"
+    except Exception as exc:
+        return False, f"EE credential check failed: {exc}"
+    if cred_path and os.path.isfile(cred_path):
+        return True, "EE credentials present"
+    return False, "no EE credentials found"
+
+
+def require_ee() -> None:
+    """Raise loudly when an EE call is attempted without credentials (no fake outputs)."""
+    ok, reason = ee_available()
+    if not ok:
+        raise RuntimeError(
+            f"EE call requires credentials ({reason}): "
+            f"{EE_AUTH_HINT} before any network use"
+        )
+
+
+def resolve_seed(data_cfg: dict[str, Any], explicit: int | None) -> int:
+    """Seed from CLI flag, else data config, else spatial_cv.yaml, else 42."""
+    if explicit is not None:
+        return int(explicit)
+    seed = data_cfg.get("seed")
+    if isinstance(seed, int):
+        return int(seed)
+    try:
+        cv = load_yaml_config(SPATIAL_CV_CFG)
+        if isinstance(cv.get("seed"), int):
+            return int(cv["seed"])
+    except (FileNotFoundError, ValueError, TypeError):
+        pass
+    return 42
+
+
+def load_ingest_configs(aoi_path: str | Path, data_path: str | Path) -> tuple[dict, dict]:
+    """Load + validate AOI and data configs (fail loudly on missing/invalid inputs)."""
+    aoi = load_yaml_config(aoi_path)
+    require_keys(aoi, ["bounds_wgs84", "crs", "resolution_m"], name="aoi config")
+    data = load_yaml_config(data_path)
+    require_keys(
+        data,
+        ["years", "seasons", "sentinel2", "sentinel1", "export"],
+        name="data config",
+    )
+    return aoi, data
+
+
+def build_export_manifest(
+    aoi: dict[str, Any], data: dict[str, Any], seed: int, ee_ok: bool
+) -> dict[str, Any]:
+    """Describe what WOULD be exported (bands, seasons, grid); no network, no I/O."""
+    bounds = [float(v) for v in aoi["bounds_wgs84"]]
+    if len(bounds) != 4:
+        raise ValueError(f"bounds_wgs84 must have 4 values, got {bounds}")
+    years = [int(y) for y in data["years"]]
+    seasons_cfg = data["seasons"]
+    windows: list[dict[str, Any]] = []
+    for year in years:
+        for season, spec in seasons_cfg.items():
+            start, end = season_date_range(year, season)
+            months = list(spec.get("months", [])) if isinstance(spec, dict) else []
+            windows.append(
+                {"year": year, "season": season, "months": months,
+                 "start": start, "end": end}
+            )
+    aoi_name = str(aoi.get("name", "aoi"))
+    items = [
+        item_dict(
+            item_id=f"{aoi_name}-{w['year']}-{w['season']}",
+            cog_href=f"{w['year']}/{w['season']}/composite.tif",
+            bounds_wgs84=(bounds[0], bounds[1], bounds[2], bounds[3]),
+            start=w["start"],
+            end=w["end"],
+        )
+        for w in windows
+    ]
+    return {
+        "aoi": {
+            "name": aoi_name,
+            "bounds_wgs84": bounds,
+            "crs": aoi["crs"],
+            "resolution_m": aoi["resolution_m"],
+        },
+        "grid": {
+            "crs": aoi["crs"],
+            "resolution_m": aoi["resolution_m"],
+            "bounds_wgs84": bounds,
+        },
+        "years": years,
+        "seasons": {
+            name: {
+                "months": list(spec.get("months", [])) if isinstance(spec, dict) else [],
+                "label": spec.get("label", name) if isinstance(spec, dict) else name,
+            }
+            for name, spec in seasons_cfg.items()
+        },
+        "windows": windows,
+        "sentinel2": {
+            "bands": list(data["sentinel2"].get("bands", [])),
+            "cloud_threshold": data["sentinel2"].get("cloud_threshold"),
+        },
+        "sentinel1": {
+            "polarizations": list(data["sentinel1"].get("polarizations", [])),
+            "orbit_pass": data["sentinel1"].get("orbit_pass"),
+            "features": list(data["sentinel1"].get("features", [])),
+        },
+        "export": dict(data["export"]),
+        "seed": seed,
+        "ee_available": ee_ok,
+        "status": "planned",
+        "items": items,
+    }
+
+
+def run_live_availability(
+    aoi: dict[str, Any], data: dict[str, Any], manifest: dict[str, Any]
+) -> dict[str, Any]:
+    """Query real GEE collection sizes (requires EE auth; network only here)."""
+    require_ee()
+    import ee
+
+    from geoeco.ingest.gee_s1 import build_s1_collection
+    from geoeco.ingest.gee_s2 import build_s2_collection
+
+    ee.Initialize()
+    bounds = [float(v) for v in aoi["bounds_wgs84"]]
+    geom = ee.Geometry.Rectangle(bounds)
+    cloud_thr = float(data["sentinel2"].get("cloud_threshold", 0.6))
+    orbit = str(data["sentinel1"].get("orbit_pass", "ASCENDING"))
+    results = []
+    for w in manifest["windows"]:
+        s2 = build_s2_collection(geom, w["start"], w["end"], cloud_thr)
+        s1 = build_s1_collection(geom, w["start"], w["end"], orbit)  # type: ignore[arg-type]
+        results.append(
+            {
+                "year": w["year"],
+                "season": w["season"],
+                "s2_size": s2.size().getInfo(),
+                "s1_size": s1.size().getInfo(),
+            }
+        )
+    manifest["availability"] = results
+    return manifest
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(
+        description="STAC-backed COG export planner: validates configs, writes a "
+        "manifest of what WOULD be exported; full GEE export only with EE creds."
+    )
+    ap.add_argument("--config", default=str(DEFAULT_AOI_CFG))
+    ap.add_argument("--data", default=str(DEFAULT_DATA_CFG))
+    ap.add_argument("--out", default=str(DEFAULT_OUT))
+    ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--dry-run", action="store_true",
+                    help="Write the manifest only, skip live EE queries.")
+    args = ap.parse_args(argv)
+    try:
+        aoi, data = load_ingest_configs(args.config, args.data)
+    except FileNotFoundError as exc:
+        print(f"ingest export: missing input: {exc}", file=sys.stderr)
+        return 2
+    except (KeyError, ValueError, TypeError) as exc:
+        print(f"ingest export: invalid config: {exc}", file=sys.stderr)
+        return 2
+    seed = resolve_seed(data, args.seed)
+    try:
+        manifest = build_export_manifest(aoi, data, seed, False)
+    except (KeyError, ValueError) as exc:
+        print(f"ingest export: invalid season/year spec: {exc}", file=sys.stderr)
+        return 2
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    ok, reason = ee_available()
+    manifest["ee_available"] = ok
+    manifest_path = out / "manifest.json"
+    if args.dry_run or not ok:
+        manifest["status"] = "needs-ee-auth"
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        print(
+            f"ingest export: EE unavailable ({reason}): {EE_AUTH_HINT}; "
+            f"wrote manifest of what WOULD be exported to {manifest_path}",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        manifest = run_live_availability(aoi, data, manifest)
+    except RuntimeError as exc:
+        print(f"ingest export: {exc}", file=sys.stderr)
+        return 2
+    except Exception as exc:
+        print(f"ingest export: EE export failed: {exc}", file=sys.stderr)
+        return 1
+    manifest["status"] = "export-ready"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"manifest": str(manifest_path),
+                      "windows": len(manifest["windows"])}, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -8,7 +8,11 @@
 """
 from __future__ import annotations
 
+import argparse
+import json
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -52,7 +56,8 @@ def transition_matrix_ha(change: np.ndarray, num_classes: int = 6) -> pd.DataFra
     return pd.DataFrame(rows)
 
 
-def cva_magnitude_direction(feats_2019: np.ndarray, feats_2025: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def cva_magnitude_direction(feats_2019: np.ndarray,
+                            feats_2025: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Change Vector Analysis: magnitude + direction (L2) over fused features.
 
     Args: (C,H,W) float arrays. Returns (magnitude HxW, direction HxW radians
@@ -76,3 +81,80 @@ def cva_second_opinion(change: np.ndarray, magnitude: np.ndarray,
     thr = float(np.quantile(magnitude, quantile))
     cva_change = magnitude >= thr
     return said_change != cva_change
+
+
+def run_smoke(year_from: int, year_to: int, config: ChangeConfig | None = None) -> int:
+    """Tiny synthetic change demo (seed 42; labelled synthetic, writes nothing)."""
+    cfg = config or ChangeConfig()
+    rng = np.random.Generator(np.random.PCG64(42))
+    labels_2019 = rng.integers(0, 6, (24, 24)).astype(np.uint8)
+    labels_2025 = rng.integers(0, 6, (24, 24)).astype(np.uint8)
+    conf_2019 = rng.integers(0, 101, (24, 24)).astype(np.uint8)
+    conf_2025 = rng.integers(0, 101, (24, 24)).astype(np.uint8)
+    change = confidence_masked_change(labels_2019, labels_2025, conf_2019, conf_2025, cfg)
+    matrix = transition_matrix_ha(change)
+    feats_2019 = rng.normal(0, 1, (4, 24, 24)).astype(np.float32)
+    feats_2025 = rng.normal(0, 1, (4, 24, 24)).astype(np.float32)
+    magnitude, _ = cva_magnitude_direction(feats_2019, feats_2025)
+    disagree = cva_second_opinion(change, magnitude, cfg.cva_threshold_quantile)
+    print(json.dumps({"smoke": True, "synthetic": True,
+                      "note": "SMOKE demo on synthetic data — NOT a real change map",
+                      "years": [year_from, year_to],
+                      "changed_ha": round(float(matrix[matrix["from_class"]
+                                                     != matrix["to_class"]]["area_ha"].sum()), 2),
+                      "masked_pixels": int((change == NODATA_CHANGE).sum()),
+                      "cva_disagreement_pixels": int(disagree.sum())}, indent=2))
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(
+        description="Post-classification change between two years (confidence-masked, "
+                    "CVA second opinion). Real path needs label + confidence .npy maps "
+                    "for both years; --smoke runs a tiny synthetic demo (labelled, "
+                    "writes nothing).")
+    ap.add_argument("--from", dest="year_from", type=int, required=True)
+    ap.add_argument("--to", dest="year_to", type=int, required=True)
+    ap.add_argument("--labels-from", default=None)
+    ap.add_argument("--labels-to", default=None)
+    ap.add_argument("--conf-from", default=None)
+    ap.add_argument("--conf-to", default=None)
+    ap.add_argument("--confidence-threshold", type=int, default=60)
+    ap.add_argument("--out", default=None, help="CSV path for the transition matrix (real path).")
+    ap.add_argument("--smoke", action="store_true")
+    args = ap.parse_args(argv)
+    if args.year_from >= args.year_to:
+        print(f"ERROR: --from ({args.year_from}) must be < --to ({args.year_to}).",
+              file=sys.stderr)
+        return 1
+    cfg = ChangeConfig(confidence_threshold=args.confidence_threshold)
+    if args.smoke:
+        return run_smoke(args.year_from, args.year_to, cfg)
+    inputs = {"--labels-from": args.labels_from, "--labels-to": args.labels_to,
+              "--conf-from": args.conf_from, "--conf-to": args.conf_to}
+    missing = [n for n, v in inputs.items() if not v]
+    if missing:
+        print(f"ERROR: refusing to run without {' '.join(missing)} "
+              "(no rasters here; --smoke for the synthetic demo only).", file=sys.stderr)
+        return 1
+    try:
+        arrays = {n: np.load(p) for n, p in inputs.items()}
+    except (FileNotFoundError, OSError, ValueError) as e:
+        print(f"ERROR: cannot load inputs: {e} (fail loudly, no fake outputs).", file=sys.stderr)
+        return 1
+    change = confidence_masked_change(arrays["--labels-from"], arrays["--labels-to"],
+                                      arrays["--conf-from"], arrays["--conf-to"], cfg)
+    matrix = transition_matrix_ha(change)
+    print(json.dumps({"years": [args.year_from, args.year_to],
+                      "changed_ha": round(float(matrix[matrix["from_class"]
+                                                     != matrix["to_class"]]["area_ha"].sum()), 2),
+                      "masked_pixels": int((change == NODATA_CHANGE).sum())}, indent=2))
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        matrix.to_csv(args.out, index=False)
+        print(f"Wrote {args.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

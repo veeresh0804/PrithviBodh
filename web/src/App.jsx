@@ -2,12 +2,34 @@
  * Layers: LC / confidence / NDVI / water / change. Year/season toggle,
  * 2019-vs-2025 swipe, draw-polygon stub, ours-vs-DW/WC compare, download,
  * About model card. Tiles come from the FastAPI /tiles proxy (TiTiler).
+ *
+ * API base resolution — runtime-configurable, NO per-environment rebuild:
+ *   1. window.__GEOECO_API_URL__ — optional runtime override. Inject via an
+ *      inline <script> in index.html or a served config.js, e.g.
+ *      <script>window.__GEOECO_API_URL__ = "https://api.example.com"</script>
+ *      The value is an API origin (no trailing slash); api() appends the
+ *      bare backend path (no /api prefix) in this case.
+ *   2. import.meta.env.VITE_API_URL — build-time value, honoured for local
+ *      `vite dev` convenience only. Leave it UNSET in Docker builds so the
+ *      shipped bundle defaults to same-origin.
+ *   3. Default "" — same-origin. api() prefixes backend paths with /api,
+ *      which nginx (web/nginx.conf) proxies to the `api` service, and the
+ *      Vite dev server proxies likewise (see web/vite.config.js).
+ * NOTE: import.meta.env is inlined at BUILD time by Vite, so VITE_API_URL
+ * must never be relied on for deployed environments.
  */
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_ORIGIN =
+  (typeof window !== "undefined" && window.__GEOECO_API_URL__) ||
+  import.meta.env.VITE_API_URL ||
+  "";
+// Default "" = same-origin. api() prefixes backend paths with /api (stripped
+// by the nginx reverse-proxy in web/nginx.conf, mirrored for `vite dev` in
+// web/vite.config.js). An explicit origin override hits the API root directly.
+const api = (p) => (API_ORIGIN ? `${API_ORIGIN}${p}` : `/api${p}`);
 const HYD = [78.47, 17.38]; // display EPSG:4326
 
 const LAYER_DEFS = [
@@ -34,7 +56,7 @@ function tileUrl(productId, compare) {
   // compare: "ours" | "dynamic_world" | "worldcover" — global baselines are
   // overlaid client-side in prod; stub reuses our tiles with a label.
   void compare;
-  return `${API}/tiles/${productId}/{z}/{x}/{y}.png`;
+  return api(`/tiles/${productId}/{z}/{x}/{y}.png`);
 }
 
 export default function App() {
@@ -92,7 +114,7 @@ export default function App() {
   const runAnalyze = async () => {
     // Draw-polygon stub: posts SAMPLE_POLYGON (full draw via
     // maplibre-gl-draw in prod) and shows class areas.
-    const res = await fetch(`${API}/analyze`, {
+    const res = await fetch(api("/analyze"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -106,7 +128,7 @@ export default function App() {
 
   const loadCard = async () => {
     if (!card) {
-      const res = await fetch(`${API}/models/1/card`);
+      const res = await fetch(api("/models/1/card"));
       setCard(await res.json());
     }
     setShowAbout((v) => !v);
@@ -161,7 +183,7 @@ export default function App() {
         {stats && <pre style={{ fontSize: 11 }}>{JSON.stringify(stats, null, 1)}</pre>}
 
         <h4>Export</h4>
-        <a href={`${API}/download/${IDS[year] ?? 2}`} target="_blank" rel="noreferrer">
+        <a href={api(`/download/${IDS[year] ?? 2}`)} target="_blank" rel="noreferrer">
           Download GeoTIFF (product {IDS[year] ?? 2})
         </a>
 

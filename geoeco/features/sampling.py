@@ -9,10 +9,20 @@ in Hyderabad) assigned by :func:`assign_spatial_blocks`.
 
 from __future__ import annotations
 
+import argparse
+import json
+import sys
 from collections.abc import Iterator
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
+
+from geoeco.utils.config import load_yaml_config, require_keys
+
+REPO = Path(__file__).resolve().parents[2]
+DEFAULT_CV_CONFIG = REPO / "configs" / "eval" / "spatial_cv.yaml"
 
 
 def assign_spatial_blocks(
@@ -128,3 +138,56 @@ def sample_points_at_coords(
     if arr.ndim == 3:
         return arr[:, rows_i, cols_i].T
     raise ValueError(f"stack must be 2-D or 3-D, got shape {arr.shape}")
+
+
+def load_block_config(path: str | Path = DEFAULT_CV_CONFIG) -> dict[str, Any]:
+    """Load and structural-check the spatial-block CV config (no data needed)."""
+    cfg = load_yaml_config(path)
+    require_keys(
+        cfg,
+        ["method", "n_splits", "group_by", "block_size_km", "seed"],
+        name="spatial_cv.yaml",
+    )
+    return cfg
+
+
+def describe_cv_plan(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Validate block config and return the printable CV plan.
+
+    Raises:
+        ValueError: On non-GroupKFold method, < 2 splits, or a
+            malformed block_size_km range.
+    """
+    if cfg["method"] != "GroupKFold":
+        raise ValueError(f"method must be 'GroupKFold', got {cfg['method']!r}")
+    n_splits = int(cfg["n_splits"])
+    if n_splits < 2:
+        raise ValueError(f"n_splits must be >= 2, got {n_splits}")
+    sizes = [float(v) for v in cfg["block_size_km"]]
+    if len(sizes) != 2 or not (0 < sizes[0] <= sizes[1]):
+        raise ValueError(f"block_size_km must be [lo, hi] with 0 < lo <= hi, got {sizes}")
+    return {
+        "method": cfg["method"],
+        "n_splits": n_splits,
+        "group_by": cfg["group_by"],
+        "block_size_km": sizes,
+        "block_size_m": [s * 1000.0 for s in sizes],
+        "seed": int(cfg["seed"]),
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Validate block config; print the spatial CV plan.")
+    ap.add_argument("--config", default=str(DEFAULT_CV_CONFIG))
+    args = ap.parse_args(argv)
+    try:
+        plan = describe_cv_plan(load_block_config(args.config))
+    except (FileNotFoundError, KeyError, ValueError, TypeError) as exc:
+        print(f"ERROR: invalid block config: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps({"cv_plan": plan}, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

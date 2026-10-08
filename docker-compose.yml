@@ -39,8 +39,9 @@ services:
   web:
     build:
       context: ./web
-    environment:
-      VITE_API_URL: http://localhost:8000
+    # NOTE: no VITE_API_URL here on purpose — the bundle defaults to
+    # same-origin /api (nginx proxies to api:8000), so one image serves all
+    # environments. Runtime env never reaches a static bundle.
     depends_on:
       - api
     ports:
