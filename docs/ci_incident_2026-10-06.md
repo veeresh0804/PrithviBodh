@@ -33,3 +33,44 @@ annotation added to CI (readable through the public annotations API).
 Intermediate hypotheses (httpx, heavy-install interaction) were recorded as
 unconfirmed at the time and are now superseded — httpx stays as a genuine
 missing dep regardless. No green run was ever claimed before evidence.
+
+---
+
+# CI incident 2026-10-08 — ruff lint regression on unpinned ruff (run #30)
+
+## Symptom
+`ci / lint-test` "Lint (ruff)" failed with 13 errors spread across
+`geoeco/api/tests` (runs #29–#30) after being clean for weeks. Every error
+belonged to rule families that had never fired in this repo (`BLE001`,
+`RUF*`, `ISC004`, `I001`).
+
+## Root cause (verified, not guessed)
+CI installs ruff unpinned (`pip install ruff`), so it silently tracks PyPI.
+ruff 0.16.0 (2026-07-23) expanded its default rule set from 59 → 413 rules,
+enabling `BLE001`, `RUF100`, `ISC004`, `I001`, `RUF046`, … for the first
+time. The failing run pulled an in-flight `ruff==0.16.10`; that exact release
+was re-verified in a throwaway Linux container against this repo. No repo
+change caused the failure — the toolchain changed under us.
+
+## Why the annotation hid it
+The lint step mirrored only the last 40 lines of `ruff.log`; the new default
+rule families sort after pyflakes errors, so 10 of the 13 errors fell outside
+the visible annotation.
+
+## Fixes
+- Lint, all real fixes with no test-behavior change: removed dead `# noqa`
+  and unused imports (RUF100/F401), dropped redundant `int()` wraps (RUF046),
+  parenthesized implicit string concatenations (ISC004), narrowed
+  `ee_available()` try blocks to `ImportError` (BLE001) with a justified
+  `# noqa: BLE001` only at the genuine EE/network boundary in each `main()`,
+  re-sorted one import block (I001), dropped an unused local (F841).
+- CI: uncapped the ruff annotation — the full log is printed to the step
+  console and mirrored as one annotation when it fits the ~60 KB cap, else
+  the last 200 lines.
+- Re-verified green with the exact ruff release CI uses (docker
+  python:3.10-slim + `ruff==0.16.10`): 0 lint errors, 143 tests pass.
+
+## Recommendation (not applied)
+Pin ruff to a known-good version (verified `ruff==0.16.10`) and/or add an
+explicit `select` under `[tool.ruff]` so default-set drift cannot break CI
+silently again.
