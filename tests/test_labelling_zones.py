@@ -67,7 +67,7 @@ def test_zoned_deterministic():
 
 def test_zoned_quota_failure_loud():
     _cfg, cells, e1, e2, min_frac = _ctx()
-    with pytest.raises(ValueError, match="[Qq]uota"):
+    with pytest.raises(ValueError, match=r"[Qq]uota"):
         G.assign_cells_zoned(cells, 7, {"core": {"test": 12, "train": 12},
                                         "mid": {"test": 0, "train": 0},
                                         "far": {"test": 0, "train": 0}},

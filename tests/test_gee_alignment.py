@@ -291,7 +291,7 @@ def test_non_contiguous_months_fail_loudly(tmp_data: Path) -> None:
 
 
 def test_bad_month_config_fails_loudly(tmp_data: Path) -> None:
-    with pytest.raises(ValueError, match="must be 1..12"):
+    with pytest.raises(ValueError, match=r"must be 1..12"):
         EC.season_window(2019, "pre", [0, 1])
 
 

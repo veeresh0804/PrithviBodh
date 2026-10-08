@@ -99,14 +99,14 @@ def test_buffer_catches_adjacent_design():
     buf = _buffer_km_from_config()
     test = [{"block": "B2", "xy": (78.53, 17.38)}]
     train = [{"block": "B3", "xy": (78.54, 17.38)}]  # ~1 km away < buffer
-    with pytest.raises(AssertionError, match="[Bb]uffer|distance"):
+    with pytest.raises(AssertionError, match=r"[Bb]uffer|distance"):
         assert_buffer_and_blocks(test, train, buf)
 
 
 def test_shared_block_caught():
     buf = _buffer_km_from_config()
     pts = [{"block": "g01_01", "xy": (78.3, 17.3)}]
-    with pytest.raises(AssertionError, match="[Ss]hared blocks"):
+    with pytest.raises(AssertionError, match=r"[Ss]hared blocks"):
         assert_buffer_and_blocks(pts, pts, buf)
 
 

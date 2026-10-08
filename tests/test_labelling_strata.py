@@ -68,7 +68,7 @@ def test_seed_and_composite_path_come_from_config():
 
 
 def test_missing_composite_fails_loudly(tmp_path):
-    with pytest.raises(FileNotFoundError, match="[Ee]xport|[Cc]omposite|Earth Engine"):
+    with pytest.raises(FileNotFoundError, match=r"[Ee]xport|[Cc]omposite|Earth Engine"):
         S.load_composite_indices(tmp_path / "does_not_exist.tif")
     # Repo state: the EE export has not been run (audit A5).
     with pytest.raises(FileNotFoundError):
@@ -127,7 +127,7 @@ def test_plan_topup_deterministic_same_seed():
 
 def test_plan_topup_short_pool_raises_not_invents():
     pool = _pool(n_per_stratum=2)
-    with pytest.raises(ValueError, match="[Pp]ool"):
+    with pytest.raises(ValueError, match=r"[Pp]ool"):
         S.plan_topup(pool, {"water_like": 10}, seed=42)
 
 
@@ -168,7 +168,7 @@ def test_strata_code_never_writes_label_or_touches_benchmarks():
     writes: list[str] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Dict):
-            for k, v in zip(node.keys, node.values):
+            for k, v in zip(node.keys, node.values, strict=True):
                 if (isinstance(k, ast.Constant) and k.value in (
                         "label", "label_name", "suggested_label")
                         and not (isinstance(v, ast.Constant) and v.value in (None, ""))):

@@ -40,7 +40,7 @@ def run_spatial_cv(
 ) -> dict:
     """5-fold spatial CV; logs params/metrics/model to MLflow. Returns summary."""
     cols = feature_columns(model_id)
-    missing = [c for c in cols + ["label", "block_id"] if c not in df.columns]
+    missing = [c for c in [*cols, "label", "block_id"] if c not in df.columns]
     if missing:
         raise KeyError(f"Point table missing columns: {missing[:8]}...")
     X = df[cols].to_numpy(dtype=np.float32)
