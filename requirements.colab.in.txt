@@ -1,7 +1,7 @@
 # requirements.colab.in.txt - input for the Colab variant lock (base + [test] extra).
 # Derived 2026-10-08 from pyproject.toml: [project].dependencies PLUS the
 # [project.optional-dependencies].test closure (test-only packages not already
-# in base: pytest, pydantic; the rest of the test list duplicates base deps).
+# in base: pytest, pydantic, pyproj; the rest of the test list duplicates base deps).
 # Keep in sync with pyproject.toml by hand; regeneration command is in
 # docs/lockfile_policy.md.
 #
@@ -32,11 +32,12 @@ hydra-core>=1.3
 pyyaml>=6.0
 dvc>=3.55
 
-# --- [test] extra additions (pytest>=8.0 and pydantic>=2.0 only; the other
-# test entries -- numpy, pandas, pyyaml, fastapi, httpx, sqlalchemy,
-# scikit-learn -- are already in base above) ---
+# --- [test] extra additions (pytest>=8.0, pydantic>=2.0 and pyproj>=3.0;
+# the other test entries -- numpy, pandas, pyyaml, fastapi, httpx,
+# sqlalchemy, scikit-learn -- are already in base above) ---
 pytest>=8.0
 pydantic>=2.0
+pyproj>=3.0               # gee_alignment UTM-grid tests (run in CI; torch smoke stays Colab-only)
 
 # --- target-only (linux/py3.10 marker) deps, pulled into the closure via
 # markers pip cannot see on a Windows host ---
