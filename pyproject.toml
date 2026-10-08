@@ -38,7 +38,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
-  "ruff>=0.4",
+  "ruff==0.16.10",
   "mypy>=1.10",
 ]
 # Test-only closure for `pytest tests/` (verified: full suite passes with ONLY
@@ -70,6 +70,12 @@ include = ["geoeco*"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.ruff.lint]
+# Explicit rule set so CI lint does not drift when PyPI ruff updates.
+# Families below are the ones that fired on run #30 (F, BLE001, RUF100,
+# plus isort/implicit-concat seen in later passes). Nothing else enabled.
+select = ["E", "F", "BLE", "RUF", "I", "ISC"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

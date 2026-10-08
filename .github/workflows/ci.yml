@@ -20,7 +20,7 @@ jobs:
 
       - name: Install (test closure only — see pyproject [test] extra)
         run: |
-          pip install ruff pytest numpy pandas pyyaml fastapi httpx sqlalchemy pydantic scikit-learn
+          pip install "ruff==0.16.10" pytest numpy pandas pyyaml fastapi httpx sqlalchemy pydantic scikit-learn
           pip install -e . --no-deps
 
       - name: Lint (ruff)
