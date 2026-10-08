@@ -9,6 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: gitleaks scans the push range
+          # (base^..head) and fails on shallow clones for multi-commit
+          # pushes (run #31: "Unexpected exit code [1]", no leak).
+          fetch-depth: 0
 
       - name: Gitleaks scan (secrets)
         uses: gitleaks/gitleaks-action@v2

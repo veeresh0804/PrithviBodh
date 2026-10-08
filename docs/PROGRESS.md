@@ -44,13 +44,20 @@ Known environment incidents:
 - Human: `earthengine authenticate`, then `scripts/ee/` dry-run → availability report → set `sentinel1.orbit_pass` → dry-runs → `--submit` 13 tasks → monitor → verify COGs.
 - Exit criteria met: all non-auth-dependent code verified; auth-required scripts clearly labelled (exit 2 without creds); 38 synthetic alignment tests pass.
 
-## Stage 2 — Ground truth (M2) — BLOCKED (D5="no"; pilot rows not started)
+## Stage 2 — Ground truth (M2) — BLOCKED (D5 not signed off; pilot rows not started)
 
-- **D1** Imagery year for test labels: **2019** (decided 2026-10-08)
-- **D2** WorldCover benchmark handling: **compare on points shown stable by the change sample** (decided 2026-10-08)
-- **D3** AlphaEarth 2025 layer: **checked-not-exists** (decided 2026-10-08) → M5 runs 2019 only or uses 2024 as disclosed stand-in
-- **D4** Cell size: **revisit after semivariogram exists** (decided 2026-10-08) — any change goes through rule 2
-- **D5** Guide sign-off on split design: **no** (not yet, blocks Stage 2) — pilot timing rows not started; 50-point pilot pending
+- **D1** Imagery year: user stated **2019** in chat (2026-10-08) — provisional,
+  NOT team-confirmed; labelling still gated on D5 regardless.
+- **D2** WorldCover handling: user stated **stable-points comparison** in chat
+  (2026-10-08) — provisional, NOT team-confirmed.
+- **D3** AlphaEarth 2025 layer: **OPEN (unverified)**. The chat value
+  "checked-not-exists" was never verified against the catalog — per ground
+  rule 4 it is flagged unverified, not recorded as decided. Must check
+  availability before M5.
+- **D4** Cell size: user stated **revisit after semivariogram** (2026-10-08) —
+  a deferral, open by definition; any change goes through rule 2.
+- **D5** Guide sign-off: user stated **"no"** (2026-10-08) — explicitly NOT
+  signed off; blocks Stage 2 per ground rule (stop at human gate).
 
 - Skeleton frozen: zoned seed 6, checksum `449ad05e…` (docs/seed_log.md).
 - Pilot timing rows: user confirmed "Not started" (2026-10-08). D5 = "no" blocks real labelling per ground rule.

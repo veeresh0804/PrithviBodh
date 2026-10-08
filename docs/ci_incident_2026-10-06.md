@@ -44,13 +44,15 @@ missing dep regardless. No green run was ever claimed before evidence.
 belonged to rule families that had never fired in this repo (`BLE001`,
 `RUF*`, `ISC004`, `I001`).
 
-## Root cause (verified, not guessed)
-CI installs ruff unpinned (`pip install ruff`), so it silently tracks PyPI.
-ruff 0.16.0 (2026-07-23) expanded its default rule set from 59 → 413 rules,
-enabling `BLE001`, `RUF100`, `ISC004`, `I001`, `RUF046`, … for the first
-time. The failing run pulled an in-flight `ruff==0.16.10`; that exact release
-was re-verified in a throwaway Linux container against this repo. No repo
-change caused the failure — the toolchain changed under us.
+## Root cause (partially verified — default-expansion part UNVERIFIED)
+CI installs ruff unpinned (`pip install ruff`), so it silently tracks PyPI
+[verified: `pip index versions ruff` → installed 0.16.10, latest 0.16.10,
+2026-10-08]. The claim that "ruff 0.16.0 expanded its default rule set from
+59 → 413 rules" is UNVERIFIED (single-agent report, no changelog evidence;
+do not repeat as fact). What IS evidenced: run #30's failures were all in
+rule families that had never fired in this repo (`BLE001`, `RUF*`, `ISC004`,
+`I001`), and the branch now pins `ruff==0.16.10` with an explicit
+`[tool.ruff.lint] select` so the rule set is fixed regardless of PyPI drift.
 
 ## Why the annotation hid it
 The lint step mirrored only the last 40 lines of `ruff.log`; the new default
