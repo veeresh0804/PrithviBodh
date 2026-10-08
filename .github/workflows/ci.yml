@@ -26,10 +26,18 @@ jobs:
       - name: Lint (ruff)
         run: |
           set +e
-          python -m ruff check geoeco api tests > ruff.log 2>&1
-          code=$?
-          # Same single-annotation mirror as Unit tests below.
-          msg=$(tail -40 ruff.log | sed ':a;N;$!ba;s/\n/%0A/g; s/\r//g')
+          python -m ruff check geoeco api tests 2>&1 | tee ruff.log
+          code=${PIPESTATUS[0]}
+          # Full ruff.log is printed to the step console (uncapped). ONE
+          # multi-line annotation mirrors it (GitHub only surfaces ~10
+          # annotations per step): the whole log when it fits GitHub's
+          # ~64 KB per-annotation cap, else the last 200 lines — run #30's
+          # tail -40 hid 10 of its 13 errors.
+          if [ "$(wc -c < ruff.log)" -le 60000 ]; then
+            msg=$(sed ':a;N;$!ba;s/\n/%0A/g; s/\r//g' ruff.log)
+          else
+            msg=$(tail -200 ruff.log | sed ':a;N;$!ba;s/\n/%0A/g; s/\r//g')
+          fi
           echo "::error::$msg"
           exit $code
 
