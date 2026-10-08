@@ -1,0 +1,58 @@
+# requirements.linux.in.txt - input for the Linux/Colab cross-platform lock.
+# Derived 2026-10-08 from pyproject.toml [project].dependencies (base runtime,
+# NO extras). Keep in sync with pyproject.toml by hand; regeneration command is
+# in docs/lockfile_policy.md.
+#
+# Resolved for: Linux (manylinux2014/2_17/2_28 x86_64) / CPython 3.10.
+# This file itself is NOT a lock: these are lower bounds only.
+#
+# Section "target-only (marker-blind)" additions: pip evaluates environment
+# markers against the HOST interpreter (Windows/3.14), so Linux/3.10-only
+# dependencies of the graph are invisible to it. Every entry below was
+# discovered by re-evaluating the resolved graph under a linux/3.10 marker
+# environment (see docs/lockfile_policy.md). They are genuine dependencies of
+# the closure, just not resolvable on this host without being listed here.
+
+earthengine-api>=0.1.412
+geemap>=0.34
+numpy>=1.26
+pandas>=2.2
+geopandas>=1.0
+rasterio>=1.3
+pystac>=1.10
+scikit-learn>=1.4
+lightgbm>=4.3
+torch>=2.3
+pytorch-lightning>=2.2
+segmentation-models-pytorch>=0.3.3
+torchgeo>=0.6
+mlflow>=2.12
+fastapi>=0.110
+httpx>=0.27
+uvicorn>=0.29
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+hydra-core>=1.3
+pyyaml>=6.0
+dvc>=3.55
+
+# --- target-only (linux/py3.10 marker) deps, pulled into the closure via
+# markers pip cannot see on a Windows host ---
+# python_version < "3.11" edges (host is 3.14 -> invisible):
+exceptiongroup>=1.3.0      # anyio, celery, ipython
+tomli>=1.1.0               # huggingface-hub, alembic
+async-timeout>=4.0,<6.0    # aiohttp
+# sys_platform != "win32" edges (host IS win32 -> invisible) -> POSIX-only:
+pexpect>4.3                # ipython (POSIX)
+gunicorn<27                # mlflow (POSIX)
+# torch's Linux CUDA/native closure:
+cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3
+cuda-bindings>=13.0.3,<14
+# nvidia-cufile is only attached to the cufile extra with a linux-only marker
+# (torch requests cuda-toolkit[cufile]) -> invisible to host-Windows pip:
+nvidia-cufile==1.15.1.6
+nvidia-cudnn-cu13==9.24.0.43
+nvidia-cusparselt-cu13==0.8.1
+nvidia-nccl-cu13==2.30.7
+nvidia-nvshmem-cu13==3.4.5
+triton~=3.8.0
