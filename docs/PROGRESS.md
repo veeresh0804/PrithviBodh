@@ -65,10 +65,25 @@ Known environment incidents:
 ## Stages 3–8 — NOT STARTED (Option B: independent workstreams; D5 gates Stage 2)
 
 - Stage 3 (Classical M1-M5) cannot start until Stage 2 labels exist — **on hold**
-- Stage 4 (Deep M6-M9) — **can prepare configs/code in parallel** (no labels needed for smoke tests)
+- Stage 4 (Deep M6-M9) — **HELD per reviewer 2026-10-08** (needs labels + GPU session)
 - Stage 5 (Analytics M5) needs change sample from labelled data — **on hold**
-- Stage 6 (Product M6) — can prep PostGIS/TiTiler config independently
-- Stage 7 (M7) and Stage 8 (M8) — downstream, can prep
+- Stage 6 (Product M6) — **HELD per reviewer 2026-10-08**
+- Stage 7 (M7) and Stage 8 (M8) — downstream, **HELD per reviewer 2026-10-08**
+
+## Reviewer follow-ups done (2026-10-08)
+
+- `tests/test_config_tracked.py` (4 tests): every `configs/*.yaml` referenced
+  by `dvc.yaml` + `labelling.yaml` must exist, be git-tracked, and not
+  git-ignored; `.gitignore` must anchor `/data/`. Negative control verified
+  (bare `data/` fails the anchor test). Guards the sentinel.yaml incident.
+- Skip audit: CI's 7 skips = 1× `importorskip("torch")`
+  (`test_tiled_smoke_runs_overlap_blend`) + 6× `importorskip("pyproj")` via
+  `_utm_grid()` (both absent from CI's light closure by design). Skeleton
+  guards all RUN: `test_canonical_checksum` passes (checksum line present in
+  seed_log.md), leakage + buffer tests have no skip paths. Local `-rs` on the
+  runnable subset: 0 skips.
+- CI `-rs` flag NOT added: would need another unverifiable push while the
+  API is rate-limited; recommended as follow-up. Skip reasons above stand in.
 
 ## Stages 3–8 — NOT STARTED
 
