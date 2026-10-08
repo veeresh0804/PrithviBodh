@@ -93,15 +93,15 @@ def ee_command_sequence(config: EEInferenceConfig | None = None,
         "# 2. Build the server-side feature stack (~275k km² never downloads locally):",
         "image = (stack_2019_plus_2025_mosaic)  # ee.Image with the trained input bands",
         "# 3. Mirror of sklearn M3 (500 trees) — see build_ee_classifier():",
-        f"classifier = ee.Classifier.smileRandomForest(numberOfTrees={cfg.n_trees}, "
-        f"seed={cfg.seed}, minLeafPopulation={cfg.min_leaf_population}{vps})",
+        (f"classifier = ee.Classifier.smileRandomForest(numberOfTrees={cfg.n_trees}, "
+         f"seed={cfg.seed}, minLeafPopulation={cfg.min_leaf_population}{vps})"),
         "# 4. Train server-side on an ee.FeatureCollection of sampled points:",
-        "trained = train_ee_classifier(training_fc, input_properties, 'label', "
-        "EEInferenceConfig(...))",
+        ("trained = train_ee_classifier(training_fc, input_properties, 'label', "
+         "EEInferenceConfig(...))"),
         "# 5. Classify server-side and export (tileScale avoids EE compute limits):",
         f"classified = classify_image(image, trained, tile_scale={cfg.tile_scale})",
-        "task = ee.batch.Export.image.toAsset(classified, "
-        f"'lc_hyderabad', scale=10, maxPixels=1e13, tileScale={cfg.tile_scale})",
+        ("task = ee.batch.Export.image.toAsset(classified, "
+         f"'lc_hyderabad', scale=10, maxPixels=1e13, tileScale={cfg.tile_scale})"),
         "task.start()",
     ]
 

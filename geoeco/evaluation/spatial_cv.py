@@ -75,8 +75,8 @@ def run_smoke(config: SpatialCVConfig | None = None) -> dict[str, Any]:
         folds.append(
             {
                 "fold": i,
-                "n_train": int(len(tr)),
-                "n_test": int(len(te)),
+                "n_train": len(tr),
+                "n_test": len(te),
                 "train_blocks": sorted(map(str, np.unique(groups[tr]))),
                 "test_blocks": sorted(map(str, np.unique(groups[te]))),
                 "disjoint": bool(
@@ -90,7 +90,7 @@ def run_smoke(config: SpatialCVConfig | None = None) -> dict[str, Any]:
         "synthetic": True,
         "seed": cfg.seed,
         "n_splits": cfg.n_splits,
-        "n_samples": int(len(groups)),
+        "n_samples": len(groups),
         "folds": folds,
         "all_disjoint": all(f["disjoint"] for f in folds),
     }

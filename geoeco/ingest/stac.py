@@ -198,7 +198,7 @@ def write_catalog_json(outdir: Path, collection_id: str, description: str,
                         items: list[dict[str, Any]], seed: int) -> Path:
     """Write a static catalog with pystac when available, else plain JSON."""
     try:
-        import pystac  # noqa: F401
+        import pystac
 
         has_pystac = True
     except ImportError:

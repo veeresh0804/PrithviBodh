@@ -141,11 +141,11 @@ def ee_available() -> tuple[bool, str]:
     try:
         from ee import oauth
 
+        # Pure path expansion (no I/O, no provider call): a missing
+        # earthengine-api is the only failure mode, so no broad except.
         cred_path = oauth.get_credentials_path()
     except ImportError:
         return False, "earthengine-api not installed"
-    except Exception as exc:
-        return False, f"EE credential check failed: {exc}"
     if cred_path and os.path.isfile(cred_path):
         return True, "EE credentials present"
     return False, "no EE credentials found"
@@ -333,7 +333,7 @@ def main(argv: list[str] | None = None) -> int:
     except RuntimeError as exc:
         print(f"ingest export: {exc}", file=sys.stderr)
         return 2
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - EE/network boundary: provider + transport errors
         print(f"ingest export: EE export failed: {exc}", file=sys.stderr)
         return 1
     manifest["status"] = "export-ready"
