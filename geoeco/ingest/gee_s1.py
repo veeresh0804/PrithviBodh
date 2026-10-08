@@ -56,7 +56,8 @@ def build_s1_collection_spec(
     }
 
 
-def build_s1_collection(aoi: Any, start_date: str, end_date: str, orbit: Orbit = "ASCENDING") -> Any:
+def build_s1_collection(aoi: Any, start_date: str, end_date: str,
+                      orbit: Orbit = "ASCENDING") -> Any:
     """Build a filtered S1 GRD ``ee.ImageCollection``.
 
     Args:
@@ -139,7 +140,7 @@ def s1_seasonal_features(collection: Any) -> Any:
     """Derive seasonal S1 features: median VV/VH (dB), ratio, std VH.
 
     Outputs per season: ``VV`` (median dB), ``VH`` (median dB),
-    ``VVVH`` = VV − VH (dB ratio), ``VH_std`` (temporal std of VH,
+    ``VVVH`` = VV - VH (dB ratio), ``VH_std`` (temporal std of VH,
     captures crop/water dynamics).
 
     Args:

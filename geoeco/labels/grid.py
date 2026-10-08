@@ -179,8 +179,9 @@ def assign_cells(cells: list[dict], seed: int, test_quota: int,
         for cid in order:
             if counts["test"] >= test_quota and counts["train"] >= train_quota:
                 break
-            for cand in sorted(("test", "train"),
-                               key=lambda s: counts[s] / (test_quota if s == "test" else train_quota)):
+            for cand in sorted(
+                ("test", "train"),
+                key=lambda s: counts[s] / (test_quota if s == "test" else train_quota)):
                 quota = test_quota if cand == "test" else train_quota
                 if counts[cand] >= quota:
                     continue
@@ -224,19 +225,23 @@ def sample_grid_points(side: dict[str, str], cells: list[dict], n_test: int,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Build grid-design audit skeleton.")
     ap.add_argument("--outdir", default=str(REPO / "data" / "labels" / "audit"))
-    ap.add_argument("--test-quota", type=int, default=None, help="test cells (default: config grid_cells.test)")
-    ap.add_argument("--train-quota", type=int, default=None, help="train cells (default: config grid_cells.train)")
+    ap.add_argument("--test-quota", type=int, default=None,
+                      help="test cells (default: config grid_cells.test)")
+    ap.add_argument("--train-quota", type=int, default=None,
+                      help="train cells (default: config grid_cells.train)")
     args = ap.parse_args(argv)
     ctx = load_labelling_config()
     cfg, aoi = ctx["labelling"], ctx["aoi"]
     if "grid_seed" not in cfg:
         raise KeyError("labelling.yaml missing grid_seed (adopted grid design requires it)")
     if "min_cell_area_fraction" not in cfg:
-        raise KeyError("labelling.yaml missing min_cell_area_fraction (sliver exclusion requires it)")
+        raise KeyError("labelling.yaml missing min_cell_area_fraction")
     seed = int(cfg["grid_seed"])
     min_frac = float(cfg["min_cell_area_fraction"])
-    test_quota = args.test_quota if args.test_quota is not None else int(cfg["grid_cells"]["test"])
-    train_quota = args.train_quota if args.train_quota is not None else int(cfg["grid_cells"]["train"])
+    test_quota = (args.test_quota if args.test_quota is not None
+                  else int(cfg["grid_cells"]["test"]))
+    train_quota = (args.train_quota if args.train_quota is not None
+                   else int(cfg["grid_cells"]["train"]))
     minlon, minlat, maxlon, maxlat = (float(v) for v in aoi["bounds_wgs84"])
     cells = build_cells(minlon, minlat, maxlon, maxlat, float(cfg["fine_block_size_m"]))
     side = assign_cells(cells, seed, test_quota, train_quota, min_frac)
@@ -261,7 +266,8 @@ def main(argv: list[str] | None = None) -> int:
         fh.write("\n")
     counts = {"test_cells": sum(1 for s in side.values() if s == "test"),
               "train_cells": sum(1 for s in side.values() if s == "train"),
-              "buffer_cells": sum(1 for s in side.values() if s not in ("test", "train")) + len(cells) - len(side),
+              "buffer_cells": (sum(1 for s in side.values() if s not in ("test", "train"))
+                               + len(cells) - len(side)),
               "n_points": len(pts)}
     print(json.dumps(counts, indent=2))
     return 0

@@ -117,7 +117,8 @@ def build_s2_collection(
     cs = (
         ee.ImageCollection(CLOUD_SOURCE).filterBounds(aoi).filterDate(start_date, end_date)
     )
-    linked = ee.Join.saveFirst("cloud").apply(s2, cs, ee.Filter.equals("system:index", "system:index"))
+    linked = ee.Join.saveFirst("cloud").apply(
+        s2, cs, ee.Filter.equals("system:index", "system:index"))
     def _attach(img: Any) -> Any:
         cloud_img = ee.Image(img.get("cloud")).select(CLOUD_BAND)
         return ee.Image(img).addBands(cloud_img)

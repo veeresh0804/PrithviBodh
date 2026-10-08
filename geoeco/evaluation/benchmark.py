@@ -40,5 +40,6 @@ def benchmark_at_points(df: pd.DataFrame, dw_col: str = "dw_label",
     if dw_col in df.columns:
         out["dynamic_world"] = classification_scores(y, crosswalk(df[dw_col], DW_CROSSWALK, "DW"))
     if wc_col in df.columns:
-        out["worldcover"] = classification_scores(y, crosswalk(df[wc_col], WC_CROSSWALK, "WorldCover"))
+        out["worldcover"] = classification_scores(
+            y, crosswalk(df[wc_col], WC_CROSSWALK, "WorldCover"))
     return out

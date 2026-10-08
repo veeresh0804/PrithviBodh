@@ -57,6 +57,8 @@ def generate_chips(
             chip = img[:, roff : roff + chip_size, coff : coff + chip_size]
             if np.isnan(chip).mean() > nodata_frac_thr:
                 continue
-            lab_chip = mask[roff : roff + chip_size, coff : coff + chip_size] if mask is not None else None
+            lab_chip = None
+            if mask is not None:
+                lab_chip = mask[roff : roff + chip_size, coff : coff + chip_size]
             chips.append((chip, lab_chip, (roff, coff)))
     return chips

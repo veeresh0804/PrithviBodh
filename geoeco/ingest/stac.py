@@ -116,9 +116,10 @@ def create_item(
     minlon, minlat, maxlon, maxlat = bounds_wgs84
     geometry = {
         "type": "Polygon",
-        "coordinates": [
-            [[minlon, minlat], [maxlon, minlat], [maxlon, maxlat], [minlon, maxlat], [minlon, minlat]]
-        ],
+        "coordinates": [[
+            [minlon, minlat], [maxlon, minlat],
+            [maxlon, maxlat], [minlon, maxlat], [minlon, minlat],
+        ]],
     }
     item = pystac.Item(
         id=item_id,
@@ -127,7 +128,8 @@ def create_item(
         datetime=start,
         properties={"start_datetime": start.isoformat(), "end_datetime": end.isoformat()},
     )
-    item.add_asset("image", pystac.Asset(href=cog_href, media_type="image/tiff; application=geotiff"))
+    item.add_asset("image", pystac.Asset(
+        href=cog_href, media_type="image/tiff; application=geotiff"))
     return item
 
 

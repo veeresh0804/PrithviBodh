@@ -94,14 +94,14 @@ def ee_command_sequence(config: EEInferenceConfig | None = None,
         "image = (stack_2019_plus_2025_mosaic)  # ee.Image with the trained input bands",
         "# 3. Mirror of sklearn M3 (500 trees) — see build_ee_classifier():",
         (f"classifier = ee.Classifier.smileRandomForest(numberOfTrees={cfg.n_trees}, "
-         f"seed={cfg.seed}, minLeafPopulation={cfg.min_leaf_population}{vps})"),
+         + f"seed={cfg.seed}, minLeafPopulation={cfg.min_leaf_population}{vps})"),
         "# 4. Train server-side on an ee.FeatureCollection of sampled points:",
         ("trained = train_ee_classifier(training_fc, input_properties, 'label', "
-         "EEInferenceConfig(...))"),
+         + "EEInferenceConfig(...))"),
         "# 5. Classify server-side and export (tileScale avoids EE compute limits):",
         f"classified = classify_image(image, trained, tile_scale={cfg.tile_scale})",
         ("task = ee.batch.Export.image.toAsset(classified, "
-         f"'lc_hyderabad', scale=10, maxPixels=1e13, tileScale={cfg.tile_scale})"),
+         + f"'lc_hyderabad', scale=10, maxPixels=1e13, tileScale={cfg.tile_scale})"),
         "task.start()",
     ]
 
@@ -109,9 +109,9 @@ def ee_command_sequence(config: EEInferenceConfig | None = None,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="GEE server-side inference: prints the exact Earth Engine command "
-                    "sequence (train/classify inside EE so ~275k km² never downloads). "
-                    "Needs prior `earthengine authenticate`; exits 2 without credentials "
-                    "and never fakes a classification.")
+        + "sequence (train/classify inside EE so ~275k km² never downloads). "
+        + "Needs prior `earthengine authenticate`; exits 2 without credentials "
+        + "and never fakes a classification.")
     ap.add_argument("--n-trees", type=int, default=500)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--min-leaf-population", type=int, default=1)

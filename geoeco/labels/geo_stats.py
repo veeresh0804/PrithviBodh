@@ -18,7 +18,8 @@ def hav(lon: float, lat: float) -> float:
     """Great-circle distance (km) from (lon, lat) to CENTER."""
     lonr, latr = math.radians(lon), math.radians(lat)
     lon0r, lat0r = math.radians(CENTER[0]), math.radians(CENTER[1])
-    h = math.sin((latr - lat0r) / 2) ** 2 + math.cos(lat0r) * math.cos(latr) * math.sin((lonr - lon0r) / 2) ** 2
+    h = (math.sin((latr - lat0r) / 2) ** 2 + math.cos(lat0r)
+         * math.cos(latr) * math.sin((lonr - lon0r) / 2) ** 2)
     return 2 * R_KM * math.asin(math.sqrt(h))
 
 
@@ -34,8 +35,10 @@ def summarize(features: list[dict]) -> tuple[Counter, Counter, dict]:
         (by_split_block, by_fine, dist) where dist[split] holds n,
         mean_dist_km (2 dp), mean_lon and mean_lat (3 dp).
     """
-    by_split_block = Counter((f["properties"]["split"], f["properties"]["block"]) for f in features)
-    by_fine = Counter((f["properties"]["split"], f["properties"].get("fine_block")) for f in features)
+    by_split_block = Counter(
+        (f["properties"]["split"], f["properties"]["block"]) for f in features)
+    by_fine = Counter(
+        (f["properties"]["split"], f["properties"].get("fine_block")) for f in features)
     dist = {}
     for split in ("test", "train"):
         pts = [f["geometry"]["coordinates"] for f in features if f["properties"]["split"] == split]

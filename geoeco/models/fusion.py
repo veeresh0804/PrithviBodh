@@ -15,7 +15,8 @@ from sklearn.linear_model import LogisticRegression
 def average_proba(p_opt: np.ndarray, p_sar: np.ndarray,
                   w_opt: float = 0.5) -> np.ndarray:
     """Weighted average of per-class probabilities; rows re-normalised."""
-    blended = w_opt * np.asarray(p_opt, dtype=float) + (1.0 - w_opt) * np.asarray(p_sar, dtype=float)
+    blended = (w_opt * np.asarray(p_opt, dtype=float)
+               + (1.0 - w_opt) * np.asarray(p_sar, dtype=float))
     blended = np.clip(blended, 1e-9, 1.0)
     return blended / blended.sum(axis=1, keepdims=True)
 

@@ -83,7 +83,8 @@ def resolve_tank_season(seasonal_water: list[bool]) -> Label:
     """
     if not seasonal_water:
         raise ValueError("seasonal_water must be non-empty")
-    return "water" if sum(1 for w in seasonal_water if w) * 2 >= len(seasonal_water) else "bare_rocky"
+    n_water = sum(1 for w in seasonal_water if w)
+    return "water" if n_water * 2 >= len(seasonal_water) else "bare_rocky"
 
 
 def resolve_fallow_vs_bare(max_seasonal_ndvi: float, field_pattern: bool) -> Label:

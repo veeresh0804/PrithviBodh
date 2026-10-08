@@ -52,7 +52,8 @@ def assign_spatial_blocks(
     return pd.Series([f"bx{x}_by{y}" for x, y in zip(bx, by)], index=df.index, name="block_id")
 
 
-def check_no_leakage(train_groups: list[str] | np.ndarray, test_groups: list[str] | np.ndarray) -> bool:
+def check_no_leakage(train_groups: list[str] | np.ndarray,
+                   test_groups: list[str] | np.ndarray) -> bool:
     """Return True iff no group appears in both train and test.
 
     Args:
@@ -65,7 +66,8 @@ def check_no_leakage(train_groups: list[str] | np.ndarray, test_groups: list[str
     return len(set(map(str, train_groups)) & set(map(str, test_groups))) == 0
 
 
-def assert_no_leakage(train_groups: list[str] | np.ndarray, test_groups: list[str] | np.ndarray) -> None:
+def assert_no_leakage(train_groups: list[str] | np.ndarray,
+                    test_groups: list[str] | np.ndarray) -> None:
     """Raise if any block leaks between train and test.
 
     Args:

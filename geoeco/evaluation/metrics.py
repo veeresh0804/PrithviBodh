@@ -17,7 +17,8 @@ def classification_scores(y_true: np.ndarray, y_pred: np.ndarray,
     per_class = f1_score(y_true, y_pred, labels=labels, average=None, zero_division=0)
     return {
         "oa": float(accuracy_score(y_true, y_pred)),
-        "macro_f1": float(f1_score(y_true, y_pred, labels=labels, average="macro", zero_division=0)),
+        "macro_f1": float(f1_score(y_true, y_pred, labels=labels,
+                                 average="macro", zero_division=0)),
         "per_class_f1": {int(k): float(v) for k, v in enumerate(per_class)},
         "kappa": float(cohen_kappa_score(y_true, y_pred)),
         "confusion": confusion_matrix(y_true, y_pred, labels=labels),

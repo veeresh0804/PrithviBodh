@@ -73,9 +73,17 @@ target-version = "py310"
 
 [tool.ruff.lint]
 # Explicit rule set so CI lint does not drift when PyPI ruff updates.
-# Families below are the ones that fired on run #30 (F, BLE001, RUF100,
-# plus isort/implicit-concat seen in later passes). Nothing else enabled.
-select = ["E", "F", "BLE", "RUF", "I", "ISC"]
+# Mirrors ruff's documented default categories (F, E, B, UP, RUF) plus BLE
+# (blind-except; fired on run #30) and I (isort). ISC is deliberately OUT:
+# ISC002 (multiline implicit concat, no auto-fix, formatting category) fires
+# on ~45 pre-existing sites (argparse descriptions etc.; measured 2026-10-08
+# with a tokenize scan) — formatter territory, never a verified CI failure.
+select = ["E", "F", "B", "UP", "BLE", "RUF", "I"]
+# E402 (import not at top) is repo-wide exempt: test modules must run
+# bootstrap code first (os.environ.setdefault in test_api.py; sys.path
+# insert in test_gee_alignment.py) before the guarded imports. Moving that
+# setup to conftest.py would leak env/path side effects into every module.
+ignore = ["E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -15,7 +15,8 @@ from geoeco.features.sampling import (
 def _points(n: int = 60, seed: int = 7) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     return pd.DataFrame(
-        {"x_32644": rng.uniform(200_000, 260_000, n), "y_32644": rng.uniform(1_900_000, 1_960_000, n)}
+        {"x_32644": rng.uniform(200_000, 260_000, n),
+         "y_32644": rng.uniform(1_900_000, 1_960_000, n)}
     )
 
 

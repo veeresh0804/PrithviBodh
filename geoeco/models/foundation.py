@@ -34,7 +34,8 @@ class ModalityDropout(nn.Module):
         super().__init__()
         self.p = p
 
-    def forward(self, optical: torch.Tensor, sar: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, optical: torch.Tensor,
+                sar: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         if not self.training or self.p <= 0.0:
             return optical, sar
         mask = (torch.rand(optical.shape[0], 1, 1, 1, device=optical.device) > self.p).float()

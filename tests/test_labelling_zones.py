@@ -93,7 +93,8 @@ def test_zoned_stable_across_hash_seeds(tmp_path):
         "qpz = {'core': {'test': 4, 'train': 3}, 'mid': {'test': 23, 'train': 17},"
         " 'far': {'test': 21, 'train': 16}};"
         "e1, e2 = (float(v) for v in cfg['zone_edges_km']);"
-        "side = G.assign_cells_zoned(cells, 6, qpz, float(cfg['min_cell_area_fraction']), (e1, e2));"
+        "mfrac = float(cfg['min_cell_area_fraction']);"
+        "side = G.assign_cells_zoned(cells, 6, qpz, mfrac, (e1, e2));"
         "print(json.dumps(side, sort_keys=True))",
         encoding="utf-8")
     outs = []

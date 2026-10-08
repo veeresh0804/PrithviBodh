@@ -35,7 +35,7 @@ def bootstrap_ci(y_true: np.ndarray, y_pred: np.ndarray, n_boot: int = 1000,
 
 def delta_ci(y_true: np.ndarray, y_fused: np.ndarray, y_single: np.ndarray,
              n_boot: int = 1000, seed: int = 42) -> dict:
-    """CI for Δ macro-F1 (fused − best single). Acceptance: ci_low > 0."""
+    """CI for Δ macro-F1 (fused - best single). Acceptance: ci_low > 0."""
     rng = np.random.default_rng(seed)
     y_true = np.asarray(y_true).ravel()
     n = len(y_true)

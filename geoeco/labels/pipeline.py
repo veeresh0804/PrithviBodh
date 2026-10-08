@@ -267,7 +267,8 @@ def main(argv: list[str] | None = None) -> int:
         paths, mcounts = split_members(pts, members, int(cfg["seed"]), labels_dir / "members")
         n_over = write_overlap_index(pts, members, labels_dir / "overlap_index.csv")
         print(json.dumps({"counts": counts, "overlap_points": n_over,
-                          "member_files": {str(p): mcounts[m["id"]] for p, m in zip(paths, members)}},
+                          "member_files": {str(p): mcounts[m["id"]]
+                                           for p, m in zip(paths, members)}},
                          indent=2))
     if args.prelabel_train:
         from geoeco.labels.prelabel import run_pretrain_suggestions

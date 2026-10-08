@@ -39,6 +39,7 @@ class _TinyUNet(nn.Module):
 
     def __init__(self, in_channels: int, num_classes: int) -> None:
         super().__init__()
+
         def block(ci: int, co: int) -> nn.Sequential:
             return nn.Sequential(
                 nn.Conv2d(ci, co, 3, padding=1), nn.BatchNorm2d(co), nn.ReLU(inplace=True),

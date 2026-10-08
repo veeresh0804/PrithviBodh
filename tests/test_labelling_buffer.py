@@ -32,8 +32,10 @@ def haversine_km(lon1, lat1, lon2, lat2) -> np.ndarray:
 
 def min_test_train_km(test_xy: list, train_xy: list) -> float:
     """Minimum test-train distance in km."""
-    tx = np.array([p[0] for p in test_xy]); ty = np.array([p[1] for p in test_xy])
-    rx = np.array([p[0] for p in train_xy]); ry = np.array([p[1] for p in train_xy])
+    tx = np.array([p[0] for p in test_xy])
+    ty = np.array([p[1] for p in test_xy])
+    rx = np.array([p[0] for p in train_xy])
+    ry = np.array([p[1] for p in train_xy])
     return float(haversine_km(tx, ty, rx, ry).min())
 
 
