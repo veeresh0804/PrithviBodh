@@ -55,7 +55,6 @@ def gaussian_weight(tile: int, overlap: int) -> np.ndarray:
     return w / w.max()
 
 
-@torch.no_grad()
 def predict_tiled(
     image: np.ndarray,
     model: torch.nn.Module,
@@ -87,18 +86,19 @@ def predict_tiled(
             seen.add((r1, c1))
             unique.append((r1, c1, t))
 
-    for i in range(0, len(unique), cfg.batch_size):
-        batch = unique[i:i + cfg.batch_size]
-        inp = torch.from_numpy(np.stack([t for _, _, t in batch])).to(device)
-        logits = model(inp).detach().cpu().numpy()  # (B,K,h,w)
-        for (r1, c1, _), lg in zip(batch, logits, strict=True):
-            h, w = lg.shape[1], lg.shape[2]
-            k = kernel[:h, :w]
-            logit_acc[:, r1:r1 + h, c1:c1 + w] += lg * k
-            w_acc[r1:r1 + h, c1:c1 + w] += k
+    with torch.no_grad():
+        for i in range(0, len(unique), cfg.batch_size):
+            batch = unique[i:i + cfg.batch_size]
+            inp = torch.from_numpy(np.stack([t for _, _, t in batch])).to(device)
+            logits = model(inp).detach().cpu().numpy()  # (B,K,h,w)
+            for (r1, c1, _), lg in zip(batch, logits, strict=True):
+                h, w = lg.shape[1], lg.shape[2]
+                k = kernel[:h, :w]
+                logit_acc[:, r1:r1 + h, c1:c1 + w] += lg * k
+                w_acc[r1:r1 + h, c1:c1 + w] += k
 
-    mean_logits = logit_acc / np.maximum(w_acc, 1e-9)
-    prob = torch.softmax(torch.from_numpy(mean_logits), dim=0).numpy()
+        mean_logits = logit_acc / np.maximum(w_acc, 1e-9)
+        prob = torch.softmax(torch.from_numpy(mean_logits), dim=0).numpy()
     labels = prob.argmax(axis=0).astype(np.uint8)
     confidence = (prob.max(axis=0) * 100).round().astype(np.uint8)
     return labels, confidence
