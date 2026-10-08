@@ -76,14 +76,19 @@ Known environment incidents:
   by `dvc.yaml` + `labelling.yaml` must exist, be git-tracked, and not
   git-ignored; `.gitignore` must anchor `/data/`. Negative control verified
   (bare `data/` fails the anchor test). Guards the sentinel.yaml incident.
-- Skip audit: CI's 7 skips = 1× `importorskip("torch")`
+- Skip audit: CI's 7 skips were 1× `importorskip("torch")`
   (`test_tiled_smoke_runs_overlap_blend`) + 6× `importorskip("pyproj")` via
   `_utm_grid()` (both absent from CI's light closure by design). Skeleton
   guards all RUN: `test_canonical_checksum` passes (checksum line present in
   seed_log.md), leakage + buffer tests have no skip paths. Local `-rs` on the
   runnable subset: 0 skips.
-- CI `-rs` flag NOT added: would need another unverifiable push while the
-  API is rate-limited; recommended as follow-up. Skip reasons above stand in.
+- Reviewer round 2 applied (commit `6f31713`, main run **#43 Success**):
+  `pyproj` added to the CI install line + `[test]` extra + colab lock input
+  (torch smoke stays Colab-only), `-rs` added to CI's pytest flags. Result:
+  `146 passed, 1 skipped` with the reason in the log
+  (`SKIPPED [1] test_infer_analytics_cli.py:44: could not import 'torch'`).
+  The six UTM-grid alignment tests now run on every push. Colab/linux `.lock`
+  regeneration (for the new input pin) is pending per `docs/lockfile_policy.md`.
 
 ## Stages 3–8 — NOT STARTED
 
