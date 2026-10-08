@@ -91,7 +91,7 @@ def predict_tiled(
         batch = unique[i:i + cfg.batch_size]
         inp = torch.from_numpy(np.stack([t for _, _, t in batch])).to(device)
         logits = model(inp).detach().cpu().numpy()  # (B,K,h,w)
-        for (r1, c1, _), lg in zip(batch, logits):
+        for (r1, c1, _), lg in zip(batch, logits, strict=True):
             h, w = lg.shape[1], lg.shape[2]
             k = kernel[:h, :w]
             logit_acc[:, r1:r1 + h, c1:c1 + w] += lg * k

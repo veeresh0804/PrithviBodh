@@ -49,7 +49,8 @@ def assign_spatial_blocks(
         raise KeyError(f"Missing coordinate columns: {x_col!r}, {y_col!r}")
     bx = np.floor(df[x_col].to_numpy(dtype=np.float64) / block_size_m).astype(int)
     by = np.floor(df[y_col].to_numpy(dtype=np.float64) / block_size_m).astype(int)
-    return pd.Series([f"bx{x}_by{y}" for x, y in zip(bx, by)], index=df.index, name="block_id")
+    return pd.Series([f"bx{x}_by{y}" for x, y in zip(bx, by, strict=True)],
+                     index=df.index, name="block_id")
 
 
 def check_no_leakage(train_groups: list[str] | np.ndarray,

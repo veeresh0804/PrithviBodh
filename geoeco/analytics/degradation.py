@@ -73,7 +73,8 @@ def degradation_by_unit(labels_2019: np.ndarray, labels_2025: np.ndarray,
             rows.append({"unit_id": uid, "unit_name": u.get("unit_name", uid),
                          "degraded_ha": 0.0, "degradation_pct": 0.0})
             continue
-        wsum = sum(w.weight(f, t) for f, t in zip(a[sel].tolist(), b[sel].tolist()))
+        wsum = sum(w.weight(f, t) for f, t in zip(a[sel].tolist(), b[sel].tolist(),
+                                                             strict=True))
         ha = wsum * PIXEL_HA
         area = float(u.get("area_ha", sel.sum() * PIXEL_HA)) or 1e-9
         rows.append({"unit_id": uid, "unit_name": u.get("unit_name", uid),

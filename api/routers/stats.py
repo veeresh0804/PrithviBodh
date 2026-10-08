@@ -67,7 +67,7 @@ def analyze(req: AnalyzeRequest) -> dict:
     weights = [STUB_AREA_HA[c] for c in CLASSES_6]
     s = sum(weights)
     areas = [{"class": c, "area_ha": round(total_ha * w / s, 2)}
-             for c, w in zip(CLASSES_6, weights)]
+             for c, w in zip(CLASSES_6, weights, strict=True)]
     return {
         "polygon_area_km2": round(area_km2, 3),
         "from_product_id": req.from_product_id,

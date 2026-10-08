@@ -173,7 +173,7 @@ def assign_cells(cells: list[dict], seed: int, test_quota: int,
     counts = {"test": 0, "train": 0}
     # Multi-pass greedy (buffer rule never relaxed): each pass reshuffles the
     # still-unassigned cells and fills gaps left by earlier passes.
-    for attempt in range(10):
+    for _attempt in range(10):
         order = rng.permutation([cid for cid in assignable if cid not in side])
         progressed = False
         for cid in order:
@@ -211,7 +211,7 @@ def sample_grid_points(side: dict[str, str], cells: list[dict], n_test: int,
     for split, n in (("test", n_test), ("train", n_train)):
         pool = [by_id[c] for c, s in side.items() if s == split]
         pick = rng.integers(0, len(pool), n)
-        for k, ci in enumerate(pick):
+        for ci in pick:
             cell = pool[int(ci)]
             lon = rng.uniform(cell["x0"], cell["x1"])
             lat = rng.uniform(cell["y0"], cell["y1"])

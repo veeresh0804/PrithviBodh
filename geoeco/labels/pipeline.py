@@ -72,7 +72,7 @@ def fine_block_of(lon: np.ndarray, lat: np.ndarray, minlon: float, minlat: float
     """Fine grid cell ids at ~5 km (provisional size, in config range)."""
     fx = np.floor((np.asarray(lon, dtype=float) - minlon) / dlon).astype(int)
     fy = np.floor((np.asarray(lat, dtype=float) - minlat) / dlat).astype(int)
-    return [f"fx{x}_fy{y}" for x, y in zip(fx, fy)]
+    return [f"fx{x}_fy{y}" for x, y in zip(fx, fy, strict=True)]
 
 
 def sample_points(rng: np.random.Generator, n: int, lon_lo: float, lon_hi: float,
@@ -173,7 +173,7 @@ def write_skeleton(pts: list[dict], path: Path) -> None:
               "properties": {k: p[k] for k in COLUMNS[1:] + EXTRA_COLUMNS[1:] if k != "geometry"}} 
              for p in pts]
     # Keep property set exactly: required + extras (minus geometry dup).
-    for f, p in zip(feats, pts):
+    for f, p in zip(feats, pts, strict=True):
         f["properties"] = {c: p[c] for c in
                            ["block", "label", "label_name", "labeller", "notes",
                             "split", "fine_block", "overlap_id"]}
@@ -268,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
         n_over = write_overlap_index(pts, members, labels_dir / "overlap_index.csv")
         print(json.dumps({"counts": counts, "overlap_points": n_over,
                           "member_files": {str(p): mcounts[m["id"]]
-                                           for p, m in zip(paths, members)}},
+                                           for p, m in zip(paths, members, strict=True)}},
                          indent=2))
     if args.prelabel_train:
         from geoeco.labels.prelabel import run_pretrain_suggestions
