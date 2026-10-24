@@ -96,7 +96,6 @@ def landsat_lst(region, year, months=None):
     flt = (_season_filter(year, months) if months
            else ee.Filter.calendarRange(year, year, "year"))
     col = (ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
-           .merge(ee.ImageCollection("LANDSAT/LC09/C02/T1_L2"))
            .filterBounds(region).filter(flt).map(_landsat_lst))
     return col.median()
 

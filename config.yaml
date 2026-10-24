@@ -10,7 +10,7 @@ aoi:
   bounds: [78.20, 17.11, 78.77, 17.66]   # [min_lon, min_lat, max_lon, max_lat], ~60x60 km
   crs: EPSG:32644                         # UTM 44N, used for the training stack export
 
-years: [2019, 2025]        # 2019 = S1A+S1B, 2025 = S1C. Avoid 2022 - early 2025 (S1 gap)
+years: [2019, 2020, 2021, 2022, 2023, 2024, 2025]   # Annual maps 2019-2025 (Addendum D7)
 train_year: 2025
 
 seasons:                   # name: [first_month, last_month]
