@@ -1,0 +1,65 @@
+# PrithviBodh - one config file for the whole project.
+# Change values here, never inside the code.
+
+project: PrithviBodh
+gee_project: YOUR_EE_PROJECT_ID   # your free Earth Engine noncommercial project ID
+seed: 42
+
+aoi:
+  name: hyderabad
+  bounds: [78.20, 17.11, 78.77, 17.66]   # [min_lon, min_lat, max_lon, max_lat], ~60x60 km
+  crs: EPSG:32644                         # UTM 44N, used for the training stack export
+
+years: [2019, 2025]        # 2019 = S1A+S1B, 2025 = S1C. Avoid 2022 - early 2025 (S1 gap)
+train_year: 2025
+
+seasons:                   # name: [first_month, last_month]
+  pre_monsoon: [3, 5]
+  monsoon: [6, 9]
+  post_monsoon: [10, 12]
+
+classes: [water, tree_cover, cropland, built_up, bare_rocky, grass_shrub]
+
+sentinel2:
+  cloud_score_threshold: 0.6
+  bands: [B2, B3, B4, B5, B6, B7, B8, B8A, B11, B12]
+
+sentinel1:
+  orbit: DESCENDING        # set after running the availability check (notebook 00)
+  speckle_radius_m: 30
+
+esri_last_year: 2023       # latest Esri Land Cover year to use (check the catalog)
+
+export:
+  drive_folder: PrithviBodh
+  scale: 10
+
+labels:
+  candidate_clusters: 12
+  points_per_cluster: 300
+  file: data/labels.csv
+
+cv:
+  block_size_km: 5
+  test_fraction: 0.2
+  val_fraction: 0.2
+
+models:
+  rf: {n_estimators: 500, min_samples_leaf: 1}
+  svm: {C: 10.0, gamma: scale}
+  temporal: {epochs: 60, batch_size: 64, lr: 0.001}
+  unet: {chip_size: 64, epochs: 40, batch_size: 8, lr: 0.001}
+
+risk:                      # simple, transparent risk indices (0 = low, 1 = high)
+  water_vv_db: -17         # Sentinel-1 VV below this (dB) counts as open water
+  neighbourhood_px: 15     # ~150 m window for "nearby" effects
+  relief_window_px: 51     # ~500 m window for local low ground
+  levels: [0.33, 0.66]     # low / medium / high cut-offs
+
+prediction:
+  steps: 1                 # 1 step = one more interval of the same length (2025 + 6 = 2031)
+  window_px: 5             # neighbourhood used to place new pixels (cellular automata)
+
+decision:
+  cell_px: 200             # 200 x 10 m = 2 km grid cells for the priority table
+  top_n: 15
