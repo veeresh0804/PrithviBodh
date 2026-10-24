@@ -6,3 +6,7 @@ data/*
 *.vrt
 stack_*.tif
 .env
+client_secret*.json
+service-account*.json
+secrets.yaml
+ee-credentials/
