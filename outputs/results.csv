@@ -1,0 +1,11 @@
+model,group,n_test,OA,precision,recall,macro_F1,F1_95CI,mIoU,kappa,note
+E4 RF optical-only,existing,165,0.885,0.898,0.9,0.899,0.852-0.940,0.826,0.86,
+E5 RF sar-only,existing,165,0.733,0.746,0.766,0.75,0.686-0.811,0.622,0.676,
+E2 worldcover,existing,165,0.479,0.675,0.506,0.534,0.465-0.594,0.406,0.363,
+E1 dynamic_world,existing,165,0.485,0.601,0.54,0.473,0.410-0.529,0.362,0.374,
+E3 esri,existing,165,0.436,0.457,0.492,0.425,0.360-0.481,0.321,0.314,
+H* HYBRID ensemble,hybrid,165,0.958,0.962,0.964,0.963,0.931-0.989,0.93,0.948,"weights H1=0.25, H2=0.25, H3=0.26, H4=0.24"
+H4 Transformer,hybrid member,165,0.958,0.962,0.964,0.962,0.933-0.988,0.929,0.948,val macro-F1 0.920
+H1 RF,hybrid member,165,0.933,0.942,0.943,0.942,0.904-0.973,0.893,0.919,val macro-F1 0.944
+H3 TempCNN,hybrid member,165,0.927,0.927,0.938,0.931,0.891-0.968,0.874,0.912,val macro-F1 0.953
+H2 SVM,hybrid member,165,0.903,0.912,0.916,0.913,0.869-0.948,0.846,0.882,val macro-F1 0.948

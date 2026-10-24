@@ -6,6 +6,8 @@ data/*
 *.vrt
 stack_*.tif
 .env
+*.tif
+*.tiff
 client_secret*.json
 service-account*.json
 secrets.yaml

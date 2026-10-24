@@ -123,7 +123,7 @@ def terrain(region):
 def _glcm(img_int, band, size=3):
     """Log-contrast and entropy of a grey-level co-occurrence matrix (7x7 window)."""
     g = img_int.glcmTexture(size=size)
-    contrast = g.select(f"{band}_contrast").log1p().rename(f"{band}_contrast")
+    contrast = g.select(f"{band}_contrast").add(1).log().rename(f"{band}_contrast")
     entropy = g.select(f"{band}_ent").rename(f"{band}_ent")
     return contrast.addBands(entropy)
 
