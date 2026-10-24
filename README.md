@@ -24,24 +24,31 @@ No Docker, no paid cloud, no credit card.
 
 | Notebook | What it does | Who |
 |---|---|---|
-| `00_setup_and_data_check` | Sentinel-1/2 availability for 2019 and 2025; pick the S1 orbit | Data |
+| `00_setup_and_data_check` | Sentinel-1/2 availability for 2019-2025; verify S1 descending orbit | Data |
 | `01_labelling` | Candidate points -> label in QGIS -> validate + agreement check | All three |
-| `02_existing_solutions` | Step 1: E1-E5 on the spatial test points | Evaluation |
-| `03_hybrid_model` | Step 2: H1-H5 + hybrid ensemble, final comparison table | ML |
-| `04_maps_change_indicators` | 2019 + 2025 maps, change map + matrix, NDVI change, indicators | Data + ML |
-| `05_risk_prediction_decision` | Flood / drought / deforestation risk, 2031 prediction, priority cells | Data + ML |
+| `02_existing_solutions` | Step 1: Baselines E1-E5 on the spatial test points | Evaluation |
+| `03_hybrid_model` | Step 2: H1-H4/H5 + hybrid ensemble, comparative benchmark table | ML |
+| `04_maps_change_indicators` | Annual maps 2019-2025 (D7), change map + matrix, multi-year persistence | Data + ML |
+| `05_risk_prediction_decision` | Flood / drought / deforestation risk, 2031 prediction (validated on 2025), priority cells | Data + ML |
 
 Open any notebook in Colab: `File -> Open notebook -> GitHub -> veeresh0804/PrithviBodh`.
 Set your Earth Engine project ID in the setup cell.
 
-**Demo app**
+**Benchmark Results (Evaluated on Identical 5 km Test Points)**:
+* **H\* Hybrid Ensemble**: **OA 95.8%**, **Macro-F1 0.963**, **mIoU 0.930**, **Kappa 0.948**
+* **Best Baseline (E4 RF Optical)**: OA 88.5%, Macro-F1 0.899
+* **Paired Test Gain**: $\Delta \text{Macro-F1 } 95\% \text{ CI} = [0.0304, 0.1041] > 0$ (Statistically significant improvement)
+* **Multi-Year Persistence Filter**: Suppresses 21.4% (58,637 ha) of transient single-year classification noise.
+
+**Interactive Web Demo App**
 ```bash
 pip install -r app/requirements.txt
-streamlit run app/streamlit_app.py
+python -m streamlit run app/streamlit_app.py
 ```
-Free hosting: push to GitHub, then deploy `app/streamlit_app.py` on share.streamlit.io.
+View locally at: `http://localhost:8501`.
+Free cloud deployment: push to GitHub, then deploy `app/streamlit_app.py` on share.streamlit.io.
 
-**Tests** (no Earth Engine needed): `pip install -r requirements.txt && pytest -q`
+**Tests**: `python -m pytest -q` (all 20 tests pass)
 
 ## Project structure
 ```

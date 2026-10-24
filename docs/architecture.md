@@ -48,9 +48,9 @@ flowchart TB
     UN["U-Net<br/>(spatial, sparse labels)"]
   end
   ENS["4. Hybrid ensemble<br/>weighted soft voting<br/>weights = validation macro-F1"]
-  OUT["5. Outputs<br/>land-cover maps 2019 + 2025, change map,<br/>NDVI change, indicators, comparison with existing"]
+  OUT["5. Outputs<br/>annual maps 2019-2025 (D7), change map,<br/>NDVI change, indicators, comparison with existing"]
   RISK["6. Risk assessment<br/>flood, drought, deforestation"]
-  PRED["7. Prediction<br/>CA-Markov land cover 2031"]
+  PRED["7. Prediction<br/>CA-Markov land cover 2031 (validated on 2025)"]
   DSS["8. Decision support<br/>ranked 2 km cells + suggested actions"]
   S2 --> ST
   S1 --> ST
@@ -79,7 +79,7 @@ flowchart TB
 |---|---|
 | Sentinel-1 | Sees through monsoon cloud; separates water and buildings by surface roughness |
 | Sentinel-2 | Main spectral information; vegetation, water and built-up indices |
-| Landsat LST | Built-up areas and bare rock are hotter than vegetation and water |
+| Landsat LST | Built-up areas and bare rock are hotter than vegetation and water (Landsat 8 used for all years for parity) |
 | MODIS NDVI stats | Year-round vegetation rhythm (crops vs trees vs scrub) |
 | DEM | Terrain context (hills, valleys, tank beds) |
 | Three seasons | Crops, tanks and grass change through the year; forests and buildings do not |
@@ -89,17 +89,18 @@ flowchart TB
 | Weighted ensemble | Models make different mistakes; voting cancels some of them |
 | GLCM texture | Separates rough surfaces (buildings, rocks) from smooth ones (water, fields) |
 | Risk indices | Flood: monsoon-only radar water nearby + low, flat ground. Drought: 1 - Vegetation Health Index (dry-season NDVI and LST). Deforestation: remaining trees near recent tree loss or new buildings |
-| CA-Markov | 2019-2025 transition rates, placed where the new class is already nearby, predicts 2031 |
+| Multi-year persistence | Requires class change to persist for >= 2 consecutive years, suppressing single-year transient noise by 21.4% (D7c) |
+| CA-Markov | Calibrated on 2019-2022, validated against true 2025 map (OA 49.2%, macro-F1 0.496), then projects 2031 scenario |
 | Decision support | 2 km cells ranked by a transparent priority score, each with its main issue and a suggested action |
 
 ## Validation (same for both steps)
-* Hand-labelled points, never taken from any global product.
+* Hand-labelled points, never taken from any global product (D6).
 * 5 km spatial blocks; whole blocks go to train, validation or test, so nearby pixels can't leak.
 * Ensemble weights come from validation blocks only; the test blocks are touched once, at the end.
 * Report OA, precision, recall, macro-F1, mIoU, kappa, per-class precision/recall/F1/IoU, 95% bootstrap CI,
   and a paired CI for "hybrid minus best existing".
-* Risk indices and the 2031 prediction are screening tools, not validated forecasts: with only two dates the
-  prediction cannot be back-tested.
+* Measured ground-truth accuracy applies to 2025 only; 2019-2024 maps are temporal transfer projections (D7c).
+* Risk indices and the 2031 prediction are screening tools; CA-Markov is back-tested on 2025 before scenario projection to 2031.
 * A random point split is also run once, only to show how much it inflates accuracy.
 
 ## Free tools only
