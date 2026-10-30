@@ -1,0 +1,89 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Segoe UI, Arial, sans-serif",
+    "fontSize": "15px",
+    "primaryColor": "#FCE4EC",
+    "primaryTextColor": "#2E1045",
+    "primaryBorderColor": "#7030A0",
+    "lineColor": "#7030A0",
+    "secondaryColor": "#FFFFFF",
+    "tertiaryColor": "#FAFAFA"
+  }
+}}%%
+flowchart LR
+    subgraph TITLE ["<b>PrithviBodh — System Use Case Diagram (Slide 18)</b>"]
+        direction LR
+
+        %% Human Actors on the Left
+        subgraph ACTORS ["Stakeholder Roles"]
+            direction TB
+            ACT_ANALYST["👤 <b>Analyst / Planner</b><br/>(Urban & Ecological Decision-Maker)"]
+            SPACE1[ ]
+            ACT_TEAM["👥 <b>Project Team</b><br/>(Data & ML Engineers)"]
+        end
+
+        %% Central System Boundary
+        subgraph SYS ["PrithviBodh Platform (Web App & Analytical Engine)"]
+            direction TB
+
+            subgraph ROW_ANALYST ["Streamlit Web Application (End-User Analytical Capabilities)"]
+                direction LR
+                UC1(["<b>UC1: Explore Annual Maps</b><br/>(2019–2025 LULC Trajectory)"])
+                UC2(["<b>UC2: Analyze Change</b><br/>(Transitions & Persistence)"])
+                UC3(["<b>UC3: Assess Hazards</b><br/>(Flood, Drought, Forest Loss)"])
+                UC4(["<b>UC4: Inspect 2031 Proj.</b><br/>(CA-Markov Simulation)"])
+                UC5(["<b>UC5: Review Priority Cells</b><br/>(Ranked 2 km Action Grid)"])
+            end
+
+            subgraph ROW_ENGINEERING ["Engineering Pipeline (Data Processing & Model Core)"]
+                direction LR
+                UC6(["<b>UC6: Label Ground Truth</b><br/>(QGIS Multi-Observer Protocol)"])
+                UC7(["<b>UC7: Ingest Multi-Sensor</b><br/>(S1, S2, L8/9 LST, MODIS, DEM)"])
+                UC8(["<b>UC8: Train & Benchmark</b><br/>(Baselines E1-E5, Hybrid H1-H5)"])
+                UC9(["<b>UC9: Export Annual Maps</b><br/>(Full-AOI GeoTIFF Outputs)"])
+            end
+        end
+
+        %% External Service on the Right
+        subgraph EXT ["External Services"]
+            direction TB
+            EXT_GEE["☁️ <b>Google Earth Engine</b><br/>(Noncommercial API / Data Store)"]
+        end
+
+        %% Analyst Connections
+        ACT_ANALYST --> UC1
+        ACT_ANALYST --> UC2
+        ACT_ANALYST --> UC3
+        ACT_ANALYST --> UC4
+        ACT_ANALYST --> UC5
+
+        %% Project Team Connections
+        ACT_TEAM --> UC6
+        ACT_TEAM --> UC7
+        ACT_TEAM --> UC8
+        ACT_TEAM --> UC9
+
+        %% Dependencies & External Connectors
+        UC7 <--> EXT_GEE
+        UC9 -.->|&lt;&lt;include&gt;&gt;| UC8
+        UC2 -.->|&lt;&lt;extend&gt;&gt;| UC1
+    end
+
+    %% Class Styling
+    classDef titleStyle fill:#FFFFFF,stroke:#7030A0,stroke-width:2.5px,color:#7030A0,font-size:18px;
+    classDef sysBoundary fill:#FFFFFF,stroke:#7030A0,stroke-width:2px,color:#7030A0,font-weight:bold;
+    classDef subBoundary fill:#FFFFFF,stroke:#B388FF,stroke-dasharray: 4 4,stroke-width:1.5px,color:#4A148C;
+    classDef actorStyle fill:#FCE4EC,stroke:#7030A0,stroke-width:2px,color:#2E1045,font-size:14px;
+    classDef ucStyle fill:#FCE4EC,stroke:#7030A0,stroke-width:2px,color:#2E1045,font-size:13px;
+    classDef extStyle fill:#EDE7F6,stroke:#7030A0,stroke-width:2px,color:#2E1045,font-size:14px;
+    classDef emptySpace fill:none,stroke:none;
+
+    class TITLE titleStyle;
+    class SYS sysBoundary;
+    class ACTORS,EXT emptySpace;
+    class ROW_ANALYST,ROW_ENGINEERING subBoundary;
+    class ACT_ANALYST,ACT_TEAM actorStyle;
+    class EXT_GEE extStyle;
+    class SPACE1 emptySpace;
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9 ucStyle;

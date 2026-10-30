@@ -1,0 +1,95 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Segoe UI, Arial, sans-serif",
+    "fontSize": "13px",
+    "primaryColor": "#FCE4EC",
+    "primaryTextColor": "#2E1045",
+    "primaryBorderColor": "#7030A0",
+    "lineColor": "#7030A0",
+    "secondaryColor": "#FFFFFF",
+    "tertiaryColor": "#FAFAFA"
+  }
+}}%%
+classDiagram
+    direction TB
+
+    class nn_Module {
+        <<PyTorch Base Module>>
+        +forward(x)*
+    }
+
+    class TempCNN {
+        -net: Sequential
+        +n_feat: int
+        +n_seasons: int
+        +n_classes: int
+        +forward(x: Tensor) Tensor
+    }
+
+    class SeasonTransformer {
+        -proj: Linear
+        -season_emb: Parameter
+        -encoder: TransformerEncoder
+        -head: Sequential
+        +forward(x: Tensor) Tensor
+    }
+
+    class UNet {
+        -e1, e2, e3: Sequential
+        -d1, d2: Sequential
+        -out: Conv2d
+        +forward(x: Tensor) Tensor
+    }
+
+    class TemporalModel {
+        +kind: str
+        +cfg: dict
+        +n_classes: int
+        -net: nn_Module
+        +fit(X, y) TemporalModel
+        +predict_proba(X) ndarray
+    }
+
+    class ClassicalSuite {
+        <<module: classical.py>>
+        +train_rf(cfg, n_classes) RandomForestClassifier
+        +train_svm(cfg) Pipeline
+    }
+
+    class HybridEnsemble {
+        <<module: hybrid.py>>
+        +normalise_weights(val_scores, power) dict
+        +combine(probs, weights) ndarray
+    }
+
+    class InferenceEngine {
+        <<module: inference.py>>
+        +predict_full_raster(models, weights, in_stack, out_tif)
+    }
+
+    class GeoEcosystemAnalytics {
+        <<modules: change, risk, prediction, decision>>
+        +compute_change(map1, map2)
+        +filter_persistence(annual_maps)
+        +compute_all_risks(raster_stack)
+        +predict_camarkov(trans_mat, base_map)
+        +generate_priority_cells(risk_layers, top_n)
+    }
+
+    %% Inheritance from PyTorch Module
+    TempCNN --|> nn_Module : inherits
+    SeasonTransformer --|> nn_Module : inherits
+    UNet --|> nn_Module : inherits
+
+    %% Temporal Model encapsulates neural networks
+    TemporalModel o-- TempCNN : wraps
+    TemporalModel o-- SeasonTransformer : wraps
+
+    %% Ensemble aggregation
+    HybridEnsemble ..> TemporalModel : aggregates probs
+    HybridEnsemble ..> ClassicalSuite : aggregates probs
+
+    %% Downstream execution flow
+    InferenceEngine ..> HybridEnsemble : executes H* on raster
+    GeoEcosystemAnalytics ..> InferenceEngine : consumes annual maps

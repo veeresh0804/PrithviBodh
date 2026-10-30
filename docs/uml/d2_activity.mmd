@@ -1,0 +1,56 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Segoe UI, Arial, sans-serif",
+    "fontSize": "14px",
+    "primaryColor": "#FCE4EC",
+    "primaryTextColor": "#2E1045",
+    "primaryBorderColor": "#7030A0",
+    "lineColor": "#7030A0",
+    "secondaryColor": "#FFFFFF",
+    "tertiaryColor": "#FAFAFA"
+  }
+}}%%
+flowchart TB
+    subgraph TITLE ["<b>PrithviBodh — End-to-End Activity Pipeline Flow (Slide 19)</b>"]
+        direction TB
+
+        subgraph LANE1 ["<b>Stage I: Multi-Sensor Ingestion, Spatial CV & Hybrid Ensemble Training</b>"]
+            direction LR
+            START((●)) --> ACQ["<b>1. Ingestion</b><br/><code>gee_data.py</code><br/>S1, S2, LST, MODIS, DEM"]
+            ACQ --> FUSE["<b>2. Feature Fusion</b><br/><code>features.py</code><br/>3 Seasons (70 Bands, 10 m)"]
+            FUSE --> SPLIT["<b>3. Spatial CV Split</b><br/><code>spatial_cv.py</code><br/>5 km Disjoint Blocks"]
+            SPLIT --> FORK_B{"<b>Fork</b>"}
+            FORK_B -->|Baselines| BASE["<b>4a. Baselines</b><br/><code>baselines.py</code><br/>E1–E5 Evaluation"]
+            FORK_B -->|Hybrid| HYB["<b>4b. Hybrid Suite</b><br/><code>classical.py</code>, <code>deep.py</code><br/>RF, SVM, CNN, Transf, UNet"]
+            BASE --> JOIN_B{"<b>Join</b>"}
+            HYB --> JOIN_B
+            JOIN_B --> ENS["<b>5. Soft Voting</b><br/><code>hybrid.py</code><br/>Validation F1 Weights (H*)"]
+        end
+
+        LANE1 ==> LANE2
+
+        subgraph LANE2 ["<b>Stage II: Spatial Evaluation, 7-Year Time-Series & Decision Support</b>"]
+            direction LR
+            EVAL["<b>6. Spatial Eval</b><br/><code>evaluate.py</code><br/>OA 95.8%, Macro-F1 0.963"]
+            EVAL --> INFER["<b>7. Annual Inference</b><br/><code>inference.py</code><br/>Maps 2019–2025 (D7)"]
+            INFER --> PERSIST["<b>8. Persistence Filter</b><br/><code>change.py</code><br/>Suppress 21.4% Noise"]
+            PERSIST --> RISK_PRED["<b>9. Risk & Prediction</b><br/><code>risk.py</code>, <code>prediction.py</code><br/>Hazards & 2031 Proj."]
+            RISK_PRED --> DSS["<b>10. Decision Grid</b><br/><code>decision.py</code><br/>Ranked 2 km Cells"]
+            DSS --> END_NODE(((◉)))
+        end
+    end
+
+    classDef titleStyle fill:#FFFFFF,stroke:#7030A0,stroke-width:2.5px,color:#7030A0,font-size:18px;
+    classDef laneStyle fill:#FFFFFF,stroke:#B388FF,stroke-width:1.5px,stroke-dasharray: 4 4,color:#4A148C;
+    classDef startEnd fill:#7030A0,stroke:#7030A0,color:#FFFFFF;
+    classDef forkJoin fill:#EDE7F6,stroke:#7030A0,stroke-width:1.5px,color:#7030A0;
+    classDef actStyle fill:#FCE4EC,stroke:#7030A0,stroke-width:2px,color:#2E1045,font-size:13px;
+    classDef branchStyle fill:#FFFFFF,stroke:#7030A0,stroke-width:2px,color:#2E1045,font-size:13px;
+
+    class TITLE titleStyle;
+    class LANE1,LANE2 laneStyle;
+    class START,END_NODE startEnd;
+    class FORK_B,JOIN_B forkJoin;
+    class ACQ,FUSE,SPLIT,ENS,EVAL,INFER,PERSIST,RISK_PRED,DSS actStyle;
+    class BASE,HYB branchStyle;

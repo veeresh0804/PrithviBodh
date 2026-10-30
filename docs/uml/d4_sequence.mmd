@@ -1,0 +1,60 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Segoe UI, Arial, sans-serif",
+    "fontSize": "13px",
+    "primaryColor": "#FCE4EC",
+    "primaryTextColor": "#2E1045",
+    "primaryBorderColor": "#7030A0",
+    "lineColor": "#7030A0",
+    "secondaryColor": "#FFFFFF",
+    "tertiaryColor": "#FAFAFA",
+    "actorBorder": "#7030A0",
+    "actorBkg": "#FCE4EC",
+    "actorTextColor": "#2E1045",
+    "signalColor": "#7030A0",
+    "signalTextColor": "#2E1045"
+  }
+}}%%
+sequenceDiagram
+    autonumber
+    actor Analyst as 👤 Analyst / Planner
+    participant App as 🖥️ Streamlit App<br/>(app/streamlit_app.py)
+    participant Storage as 📁 Output Storage<br/>(outputs/)
+    participant VRT as 🗺️ Rasterio VRT<br/>(WarpedVRT EPSG:4326)
+    participant Stats as 📊 Analytics Engine<br/>(NumPy / Pandas)
+    participant Folium as 🌍 Folium Map<br/>(st_folium)
+
+    Note over Analyst, Folium: <b>Scenario: Analyst selects year and views land-cover map with trajectory</b>
+
+    Analyst->>App: Select Year (e.g., 2025) via dropdown
+    activate App
+
+    App->>Storage: Locate landcover_2025.tif
+    Storage-->>App: File handle
+
+    App->>VRT: load("landcover_2025.tif")
+    activate VRT
+    VRT->>VRT: Reproject to EPSG:4326 & resample (MAX_PX=1500)
+    VRT-->>App: Return 2D array, bounding box & px_ha
+    deactivate VRT
+
+    App->>Stats: areas(full_array, px_ha)
+    activate Stats
+    Stats->>Stats: np.bincount(v) * px_ha across 6 classes
+    Stats-->>App: DataFrame (hectares per class)
+    deactivate Stats
+
+    App->>App: to_rgba(arr) with 6-class hex palette
+    App->>Folium: overlay_map(rgba_png, bounds)
+    activate Folium
+    Folium->>Folium: Create folium.Map + ImageOverlay
+    Folium-->>App: Rendered interactive map HTML/canvas
+    deactivate Folium
+
+    App->>Storage: Read annual_class_areas_2019_2025.csv
+    Storage-->>App: 7-year area trajectory data
+
+    App->>App: st.line_chart(df_ann)
+    App-->>Analyst: Display interactive map, class area table & 7-year trend
+    deactivate App

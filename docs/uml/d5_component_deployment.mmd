@@ -1,0 +1,65 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Segoe UI, Arial, sans-serif",
+    "fontSize": "13px",
+    "primaryColor": "#FCE4EC",
+    "primaryTextColor": "#2E1045",
+    "primaryBorderColor": "#7030A0",
+    "lineColor": "#7030A0",
+    "secondaryColor": "#FFFFFF",
+    "tertiaryColor": "#FAFAFA"
+  }
+}}%%
+flowchart LR
+    subgraph TITLE ["<b>PrithviBodh — Component & Deployment Architecture (Slide 20)</b>"]
+        direction LR
+
+        %% Tier 1: Authoring & External Data
+        subgraph T1 ["<b>1. Source & External Services</b>"]
+            direction TB
+            QGIS["🗺️ <b>QGIS Desktop</b><br/>(Local Workstation)<br/><i>Produces data/labels.csv</i>"]
+            GEE["☁️ <b>Google Earth Engine</b><br/>(Noncommercial Cloud API)<br/><i>S1, S2, L8/9, MODIS, DEM</i>"]
+            GH["🐙 <b>GitHub Repository</b><br/>(veeresh0804/PrithviBodh)<br/><i>Code, Configs, Notebooks</i>"]
+        end
+
+        %% Tier 2: Execution & Compute
+        subgraph T2 ["<b>2. Compute & Pipeline Engine</b>"]
+            direction TB
+            COLAB["📓 <b>Google Colab / Kaggle</b><br/>(Cloud GPU / CPU Runtime)<br/><i>Runs Notebooks 00–05</i>"]
+            CORE["⚙️ <b>prithvibodh/ Core</b><br/><i>gee_data, features, spatial_cv,<br/>classical, deep, hybrid, inference</i>"]
+            GDRIVE[("💾 <b>Google Drive</b><br/><i>Folder: PrithviBodh</i><br/>(Raw 70-band Stacks)")]
+        end
+
+        %% Tier 3: Serving & UI
+        subgraph T3 ["<b>3. Serving & Delivery</b>"]
+            direction TB
+            OUTPUTS[("📁 <b>Local outputs/</b><br/><i>landcover_*.tif, risk_*.tif,<br/>priority_cells.csv</i>")]
+            APP["🖥️ <b>Streamlit Web App</b><br/>(app/streamlit_app.py)<br/><i>Local :8501 or Community Cloud</i>"]
+            CLIENT["🌐 <b>Analyst Browser</b><br/>(Folium Leaflet Canvas,<br/>Interactive Charts)"]
+        end
+
+        %% Data & Control Flow
+        GH -->|Clone / Open| COLAB
+        QGIS -->|Commit labels.csv| GH
+        COLAB -->|Execute| CORE
+        CORE <-->|Extract Bands| GEE
+        GEE -->|Export Stacks| GDRIVE
+        GDRIVE -->|Feed Chips| CORE
+        CORE -->|Save Products| OUTPUTS
+        OUTPUTS -->|Load Rasters| APP
+        APP <-->|HTTP / WebSockets| CLIENT
+    end
+
+    %% Class Styling
+    classDef titleStyle fill:#FFFFFF,stroke:#7030A0,stroke-width:2.5px,color:#7030A0,font-size:17px;
+    classDef tierBox fill:#FFFFFF,stroke:#B388FF,stroke-width:1.5px,stroke-dasharray: 4 4,color:#4A148C;
+    classDef compStyle fill:#FCE4EC,stroke:#7030A0,stroke-width:2px,color:#2E1045,font-size:12px;
+    classDef extStyle fill:#EDE7F6,stroke:#7030A0,stroke-width:2px,color:#2E1045,font-size:12px;
+    classDef storageStyle fill:#FFF8E1,stroke:#7030A0,stroke-width:2px,color:#2E1045,font-size:12px;
+
+    class TITLE titleStyle;
+    class T1,T2,T3 tierBox;
+    class QGIS,COLAB,CORE,APP,CLIENT compStyle;
+    class GEE,GH extStyle;
+    class GDRIVE,OUTPUTS storageStyle;
